@@ -9,7 +9,7 @@ function ProduitsWalmart() {
     const fetchProduits = async () => {
       try {
         // Adaptation vers l'URL Walmart
-        const response = await fetch("https://product-scraper-ftnb.onrender.com/Walmart");
+        const response = await fetch("http://127.0.0.1:5000/walmart");
         if (!response.ok) throw new Error("Erreur lors de la récupération des données");
         const data = await response.json();
         setProduits(data);
@@ -63,24 +63,25 @@ function ProduitsWalmart() {
               {/* Image du produit */}
               <div className="relative h-56 bg-white p-4">
                 <img 
-                  src={produit.image} 
-                  alt={produit.titre} 
-                  className="w-full h-full object-contain"
+                  src={produit.image_url} 
+                  alt={produit.Produit} 
+                  className="max-w-full max-h-full object-contain transform group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
 
               {/* Contenu */}
               <div className="p-4 flex flex-col flex-grow">
                 <h3 className="text-gray-800 font-semibold text-sm line-clamp-2 h-10 mb-2">
-                  {produit.titre}
+                  {produit.Produit}
                 </h3>
                 
                 {/* Note et Avis */}
                 <div className="flex items-center mb-2">
-                  <span className="text-yellow-400 text-sm">★</span>
-                  <span className="text-gray-600 text-xs ml-1">
-                    {produit.note || "N/A"} ({produit.avis || 0} avis)
-                  </span>
+                  <div className="flex text-yellow-400 text-sm">
+                    {"★".repeat(Math.floor(produit.Note || 0))}
+                    <span className="text-gray-300">{"★".repeat(5 - Math.floor(produit.Note || 0))}{produit.avis || 0 } avis</span>
+                  </div>
+                 
                 </div>
 
                 {/* Prix */}

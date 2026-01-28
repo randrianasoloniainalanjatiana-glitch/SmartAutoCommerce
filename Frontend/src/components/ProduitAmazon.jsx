@@ -9,7 +9,7 @@ function ProduitsAmazon() {
     const fetchProduits = async () => {
       try {
         // Ajout de l'en-tête pour bypasser la page d'avertissement ngrok
-        const response = await fetch("https://scrapping-jgcf.onrender.com/Amazon", {
+        const response = await fetch("https://scrapping-jgcf.onrender.com/amazon", {
           headers: {
             "ngrok-skip-browser-warning": "true",
           },
@@ -80,7 +80,7 @@ function ProduitsAmazon() {
               {/* Conteneur Image */}
               <div className="relative h-56 bg-white p-4 flex items-center justify-center">
                 <img 
-                  src={produit.image} 
+                  src={produit.image_url} 
                   alt={produit.titre} 
                   className="max-w-full max-h-full object-contain transform group-hover:scale-105 transition-transform duration-300"
                 />
@@ -89,14 +89,14 @@ function ProduitsAmazon() {
               {/* Détails du produit */}
               <div className="p-4 flex flex-col flex-grow border-t border-gray-50">
                 <h3 className="text-gray-800 text-sm font-semibold line-clamp-2 h-10 mb-2 group-hover:text-orange-600 transition-colors">
-                  {produit.titre}
+                  {produit.Produit}
                 </h3>
                 
                 {/* Note et Avis */}
                 <div className="flex items-center mb-3">
                   <div className="flex text-yellow-400 text-sm">
-                    {"★".repeat(Math.floor(produit.note || 0))}
-                    <span className="text-gray-300">{"★".repeat(5 - Math.floor(produit.note || 0))}</span>
+                    {"★".repeat(Math.floor(produit.Note || 0))}
+                    <span className="text-gray-300">{"★".repeat(5 - Math.floor(produit.Note || 0))}</span>
                   </div>
                   <span className="text-blue-600 text-xs ml-2 hover:underline cursor-pointer">
                     {produit.avis.toLocaleString()}
