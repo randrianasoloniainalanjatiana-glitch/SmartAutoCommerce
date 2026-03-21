@@ -1,13 +1,72 @@
 import hashlib
+from datetime import datetime, timedelta, timezone
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from .supabase_client import supabase
+from .email_utils import generate_code, send_confirmation_email
 
 
 def _hash_password(password: str) -> str:
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+
+def _now_iso():
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _expiry_iso(minutes=10):
+    return (datetime.now(timezone.utc) + timedelta(minutes=minutes)).isoformat()
+
+
+def _update_code_fields(email, code, code_type):
+    """Met à jour les champs de code de confirmation pour un utilisateur."""
+    supabase.table('utilisateurs').update({
+        "code_confirmation": code,
+        "code_type": code_type,
+        "code_envoye_le": _now_iso(),
+        "code_expire_le": _expiry_iso(10),
+        "tentatives_code": 0,
+    }).eq('email', email).execute()
+
+
+class VerifyPasswordView(APIView):
+    def post(self, request):
+        email = request.data.get('email')
+        password = request.data.get('password')
+        
+        if not email or not password:
+            return Response(
+                {"error": "Email et mot de passe requis"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            # Récupérer l'utilisateur depuis Supabase
+            response = supabase.table('utilisateurs').select('*').eq('email', email).execute()
+            
+            if not response.data:
+                return Response(
+                    {"valid": False, "error": "Utilisateur non trouvé"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            user = response.data[0]
+            hashed_password = _hash_password(password)
+            
+            # Vérifier le mot de passe
+            if user.get('mot_de_passe') == hashed_password:
+                return Response({"valid": True}, status=status.HTTP_200_OK)
+            else:
+                return Response({"valid": False}, status=status.HTTP_200_OK)
+                
+        except Exception as e:
+            print(f"Erreur vérification mot de passe: {e}")
+            return Response(
+                {"valid": False, "error": "Erreur serveur"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
 
 class SupabaseDataView(APIView):
@@ -49,56 +108,309 @@ class SupabaseClient(APIView):
         return Response(response.data)
 
 
+# ─────────────────────────────────────────────────────────────
+#  INSCRIPTION : étape 1 — créer le compte + envoyer le code
+# ─────────────────────────────────────────────────────────────
 class RegisterView(APIView):
     def post(self, request):
-        payload = request.data
-        email = payload.get('email')
-        mot_de_passe = payload.get('mot_de_passe')
+        try:
+            payload = request.data
+            email = payload.get('email')
+            mot_de_passe = payload.get('mot_de_passe')
 
-        if not email or not mot_de_passe:
-            return Response({"error": "email et mot_de_passe sont requis"}, status=status.HTTP_400_BAD_REQUEST)
+            if not email or not mot_de_passe:
+                return Response({"error": "email et mot_de_passe sont requis"}, status=status.HTTP_400_BAD_REQUEST)
 
-        existing = supabase.table('utilisateurs').select("*").eq('email', email).limit(1).execute()
-        if existing.data:
-            return Response({"error": "Un compte avec cet email existe déjà."}, status=status.HTTP_409_CONFLICT)
+            existing = supabase.table('utilisateurs').select("*").eq('email', email).limit(1).execute()
+            if existing.data:
+                user = existing.data[0]
+                # Si le compte existe mais n'est pas vérifié, on renvoie un code
+                if not user.get('email_verifie'):
+                    code = generate_code()
+                    _update_code_fields(email, code, "inscription")
+                    send_confirmation_email(email, code, 'inscription')
+                    return Response({
+                        "message": "Un code de confirmation a été envoyé à votre adresse email.",
+                        "email": email,
+                        "requires_verification": True
+                    }, status=status.HTTP_200_OK)
+                return Response({"error": "Un compte avec cet email existe déjà."}, status=status.HTTP_409_CONFLICT)
 
-        data_to_insert = {
-            "email": email,
-            "mot_de_passe": _hash_password(mot_de_passe),
-            "nom": payload.get('nom'),
-            "prenom": payload.get('prenom'),
-            "telephone": payload.get('telephone'),
-            "adresse": payload.get('adresse'),
-        }
+            code = generate_code()
 
-        response = supabase.table('utilisateurs').insert(data_to_insert).execute()
-        created = response.data[0] if response.data else {}
-        created.pop('mot_de_passe', None)
-        return Response(created, status=status.HTTP_201_CREATED)
+            data_to_insert = {
+                "email": email,
+                "mot_de_passe": _hash_password(mot_de_passe),
+                "nom": payload.get('nom'),
+                "prenom": payload.get('prenom'),
+                "telephone": payload.get('telephone'),
+                "adresse": payload.get('adresse'),
+                "email_verifie": False,
+                "code_confirmation": code,
+                "code_type": "inscription",
+                "code_envoye_le": _now_iso(),
+                "code_expire_le": _expiry_iso(10),
+                "tentatives_code": 0,
+            }
+
+            response = supabase.table('utilisateurs').insert(data_to_insert).execute()
+
+            # Envoyer l'email
+            send_confirmation_email(email, code, 'inscription')
+
+            return Response({
+                "message": "Inscription réussie ! Un code de confirmation a été envoyé à votre adresse email.",
+                "email": email,
+                "requires_verification": True
+            }, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            print(f"ERREUR RegisterView: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# ─────────────────────────────────────────────────────────────
+#  INSCRIPTION : étape 2 — vérifier le code
+# ─────────────────────────────────────────────────────────────
+class VerifyCodeView(APIView):
+    def post(self, request):
+        try:
+            email = request.data.get('email')
+            code = request.data.get('code')
+
+            if not email or not code:
+                return Response({"error": "email et code sont requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            resp = supabase.table('utilisateurs').select("*").eq('email', email).limit(1).execute()
+            user = (resp.data or [None])[0]
+            if not user:
+                return Response({"error": "Utilisateur non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+            if user.get('email_verifie'):
+                return Response({"message": "Email déjà vérifié."}, status=status.HTTP_200_OK)
+
+            # Vérifier le nombre de tentatives
+            if (user.get('tentatives_code') or 0) >= 5:
+                return Response({"error": "Trop de tentatives. Veuillez demander un nouveau code."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+            # Vérifier l'expiration
+            expire_str = user.get('code_expire_le')
+            if expire_str:
+                expire_dt = datetime.fromisoformat(expire_str.replace('Z', '+00:00'))
+                if datetime.now(timezone.utc) > expire_dt:
+                    return Response({"error": "Le code a expiré. Veuillez demander un nouveau code."}, status=status.HTTP_410_GONE)
+
+            # Vérifier le code
+            stored_code = (user.get('code_confirmation') or '').strip()
+            if stored_code != code.strip():
+                supabase.table('utilisateurs').update({
+                    "tentatives_code": (user.get('tentatives_code') or 0) + 1
+                }).eq('email', email).execute()
+                remaining = 5 - ((user.get('tentatives_code') or 0) + 1)
+                return Response({
+                    "error": f"Code incorrect. {remaining} tentative(s) restante(s)."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Code correct → marquer comme vérifié
+            supabase.table('utilisateurs').update({
+                "email_verifie": True,
+                "code_confirmation": None,
+                "code_type": None,
+                "tentatives_code": 0,
+            }).eq('email', email).execute()
+
+            return Response({"message": "Email vérifié avec succès ! Vous pouvez maintenant vous connecter."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(f"ERREUR VerifyCodeView: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ─────────────────────────────────────────────────────────────
+#  RENVOYER LE CODE
+# ─────────────────────────────────────────────────────────────
+class ResendCodeView(APIView):
+    def post(self, request):
+        try:
+            email = request.data.get('email')
+            code_type = request.data.get('code_type', 'inscription')
+
+            if not email:
+                return Response({"error": "email est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            resp = supabase.table('utilisateurs').select("*").eq('email', email).limit(1).execute()
+            user = (resp.data or [None])[0]
+            if not user:
+                return Response({"error": "Utilisateur non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Vérifier le cooldown de 60 secondes
+            envoye_str = user.get('code_envoye_le')
+            if envoye_str:
+                envoye_dt = datetime.fromisoformat(envoye_str.replace('Z', '+00:00'))
+                diff = (datetime.now(timezone.utc) - envoye_dt).total_seconds()
+                if diff < 60:
+                    wait = int(60 - diff)
+                    return Response({
+                        "error": f"Veuillez patienter {wait} secondes avant de renvoyer un code."
+                    }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+            code = generate_code()
+            _update_code_fields(email, code, code_type)
+            send_confirmation_email(email, code, code_type)
+
+            return Response({"message": "Un nouveau code a été envoyé."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(f"ERREUR ResendCodeView: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ─────────────────────────────────────────────────────────────
+#  CONNEXION — vérifie aussi email_verifie
+# ─────────────────────────────────────────────────────────────
 class LoginView(APIView):
     def post(self, request):
-        payload = request.data
-        email = payload.get('email')
-        mot_de_passe = payload.get('mot_de_passe')
+        try:
+            payload = request.data
+            email = payload.get('email')
+            mot_de_passe = payload.get('mot_de_passe')
 
-        if not email or not mot_de_passe:
-            return Response({"error": "email et mot_de_passe sont requis"}, status=status.HTTP_400_BAD_REQUEST)
+            if not email or not mot_de_passe:
+                return Response({"error": "email et mot_de_passe sont requis"}, status=status.HTTP_400_BAD_REQUEST)
 
-        response = supabase.table('utilisateurs').select("*").eq('email', email).limit(1).execute()
-        user = (response.data or [None])[0]
-        if not user:
-            return Response({"error": "Identifiants invalides."}, status=status.HTTP_401_UNAUTHORIZED)
+            response = supabase.table('utilisateurs').select("*").eq('email', email).limit(1).execute()
+            user = (response.data or [None])[0]
+            if not user:
+                return Response({"error": "Identifiants invalides."}, status=status.HTTP_401_UNAUTHORIZED)
 
-        hashed = _hash_password(mot_de_passe)
-        if user.get('mot_de_passe') != hashed:
-            return Response({"error": "Identifiants invalides."}, status=status.HTTP_401_UNAUTHORIZED)
+            hashed = _hash_password(mot_de_passe)
+            if user.get('mot_de_passe') != hashed:
+                return Response({"error": "Identifiants invalides."}, status=status.HTTP_401_UNAUTHORIZED)
 
-        user.pop('mot_de_passe', None)
-        return Response(user, status=status.HTTP_200_OK)
+            # Vérifier si l'email est confirmé
+            if not user.get('email_verifie'):
+                # Renvoyer un code automatiquement
+                code = generate_code()
+                _update_code_fields(email, code, "inscription")
+                send_confirmation_email(email, code, 'inscription')
+                return Response({
+                    "error": "Votre email n'est pas encore vérifié. Un nouveau code de confirmation a été envoyé.",
+                    "requires_verification": True,
+                    "email": email
+                }, status=status.HTTP_403_FORBIDDEN)
+
+            user.pop('mot_de_passe', None)
+            user.pop('code_confirmation', None)
+            return Response(user, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(f"ERREUR LoginView: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
+# ─────────────────────────────────────────────────────────────
+#  MOT DE PASSE OUBLIÉ — étape 1 : envoyer le code
+# ─────────────────────────────────────────────────────────────
+class ForgotPasswordView(APIView):
+    def post(self, request):
+        try:
+            email = request.data.get('email')
+            if not email:
+                return Response({"error": "email est requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            resp = supabase.table('utilisateurs').select("*").eq('email', email).limit(1).execute()
+            user = (resp.data or [None])[0]
+            if not user:
+                # Pour des raisons de sécurité, ne pas révéler si l'email existe ou non
+                return Response({"message": "Si un compte existe avec cet email, un code de réinitialisation a été envoyé."}, status=status.HTTP_200_OK)
+
+            # Vérifier le cooldown
+            envoye_str = user.get('code_envoye_le')
+            if envoye_str:
+                envoye_dt = datetime.fromisoformat(envoye_str.replace('Z', '+00:00'))
+                diff = (datetime.now(timezone.utc) - envoye_dt).total_seconds()
+                if diff < 60:
+                    wait = int(60 - diff)
+                    return Response({
+                        "error": f"Veuillez patienter {wait} secondes avant de renvoyer un code."
+                    }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+            code = generate_code()
+            _update_code_fields(email, code, "reset")
+            send_confirmation_email(email, code, 'reset')
+
+            return Response({"message": "Si un compte existe avec cet email, un code de réinitialisation a été envoyé."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(f"ERREUR ForgotPasswordView: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ─────────────────────────────────────────────────────────────
+#  MOT DE PASSE OUBLIÉ — étape 2 : vérifier + nouveau mdp
+# ─────────────────────────────────────────────────────────────
+class ResetPasswordView(APIView):
+    def post(self, request):
+        try:
+            email = request.data.get('email')
+            code = request.data.get('code')
+            new_password = request.data.get('nouveau_mot_de_passe')
+
+            if not email or not code or not new_password:
+                return Response({"error": "email, code et nouveau_mot_de_passe sont requis."}, status=status.HTTP_400_BAD_REQUEST)
+
+            if len(new_password) < 6:
+                return Response({"error": "Le mot de passe doit contenir au moins 6 caractères."}, status=status.HTTP_400_BAD_REQUEST)
+
+            resp = supabase.table('utilisateurs').select("*").eq('email', email).limit(1).execute()
+            user = (resp.data or [None])[0]
+            if not user:
+                return Response({"error": "Utilisateur non trouvé."}, status=status.HTTP_404_NOT_FOUND)
+
+            # Vérifier le type de code
+            if user.get('code_type') != 'reset':
+                return Response({"error": "Aucune demande de réinitialisation en cours."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Vérifier le nombre de tentatives
+            if (user.get('tentatives_code') or 0) >= 5:
+                return Response({"error": "Trop de tentatives. Veuillez demander un nouveau code."}, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+            # Vérifier l'expiration
+            expire_str = user.get('code_expire_le')
+            if expire_str:
+                expire_dt = datetime.fromisoformat(expire_str.replace('Z', '+00:00'))
+                if datetime.now(timezone.utc) > expire_dt:
+                    return Response({"error": "Le code a expiré. Veuillez demander un nouveau code."}, status=status.HTTP_410_GONE)
+
+            # Vérifier le code
+            stored_code = (user.get('code_confirmation') or '').strip()
+            if stored_code != code.strip():
+                supabase.table('utilisateurs').update({
+                    "tentatives_code": (user.get('tentatives_code') or 0) + 1
+                }).eq('email', email).execute()
+                remaining = 5 - ((user.get('tentatives_code') or 0) + 1)
+                return Response({
+                    "error": f"Code incorrect. {remaining} tentative(s) restante(s)."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Code correct → mettre à jour le mot de passe
+            supabase.table('utilisateurs').update({
+                "mot_de_passe": _hash_password(new_password),
+                "code_confirmation": None,
+                "code_type": None,
+                "tentatives_code": 0,
+            }).eq('email', email).execute()
+
+            return Response({"message": "Mot de passe réinitialisé avec succès !"}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            print(f"ERREUR ResetPasswordView: {e}")
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ─────────────────────────────────────────────────────────────
+#  COMMANDES
+# ─────────────────────────────────────────────────────────────
 class SupabaseCommande(APIView):
     def get(self, request):
         try:

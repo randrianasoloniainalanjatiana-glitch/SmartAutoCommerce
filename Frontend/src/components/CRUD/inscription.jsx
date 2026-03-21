@@ -24,12 +24,14 @@ const Inscription = () => {
         body: JSON.stringify(form),
       });
       const data = await response.json();
-      if (!response.ok) {
+      if (!response.ok && !data.requires_verification) {
         setError(data.error || "Une erreur est survenue.");
       } else {
-        setSuccess("Inscription réussie ! Vous pouvez maintenant vous connecter.");
-        setForm({ email: "", mot_de_passe: "", nom: "", prenom: "", telephone: "", adresse: "" });
-        setTimeout(() => navigate("/login"), 1200);
+        setSuccess(data.message || "Un code de confirmation a été envoyé !");
+        // Rediriger vers la page de vérification avec l'email
+        setTimeout(() => {
+          navigate("/verify-code", { state: { email: form.email } });
+        }, 1200);
       }
     } catch (err) {
       setError("Impossible de contacter le serveur.");

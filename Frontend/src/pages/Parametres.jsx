@@ -7,6 +7,9 @@ const Parametres = () => {
   const [parametres, setParametres] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
   const [formData, setFormData] = useState({
     nom_boutique: '', description_boutique: '', secteur_activite: '', type_entreprise: '',
     pays: '', ville: '', adresse: '', telephone: '', whatsapp: '', email: '', site_web: '',
@@ -31,6 +34,44 @@ const Parametres = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditClick = () => {
+    setShowPasswordModal(true);
+    setPassword('');
+    setPasswordError('');
+  };
+
+  const handlePasswordSubmit = async () => {
+    if (!password) {
+      setPasswordError('Veuillez entrer votre mot de passe');
+      return;
+    }
+
+    try {
+      const response = await axios.post('http://localhost:8000/api/verify-password/', {
+        email: user.email,
+        password: password
+      });
+
+      if (response.data.valid) {
+        setShowPasswordModal(false);
+        setEditing(true);
+        setPassword('');
+        setPasswordError('');
+      } else {
+        setPasswordError('Mot de passe incorrect');
+      }
+    } catch (error) {
+      console.error('Erreur de vérification du mot de passe:', error);
+      setPasswordError('Erreur lors de la vérification du mot de passe');
+    }
+  };
+
+  const handlePasswordModalClose = () => {
+    setShowPasswordModal(false);
+    setPassword('');
+    setPasswordError('');
   };
 
   const handleSave = async () => {
@@ -89,7 +130,7 @@ const Parametres = () => {
             </div>
             <div className="flex gap-2">
               {!editing ? (
-                <button onClick={() => setEditing(true)} className="px-5 py-2.5 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-colors font-semibold text-sm shadow-md shadow-cyan-100 dark:shadow-none">Modifier</button>
+                <button onClick={handleEditClick} className="px-5 py-2.5 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-colors font-semibold text-sm shadow-md shadow-cyan-100 dark:shadow-none">Modifier</button>
               ) : (
                 <>
                   <button onClick={handleCancel} className="px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold text-sm">Annuler</button>
@@ -165,6 +206,54 @@ const Parametres = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de vérification du mot de passe */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 dark:bg-gray-900/30 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4 shadow-2xl border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-white mb-4">
+              Vérification de sécurité
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Veuillez entrer votre mot de passe pour modifier les paramètres
+            </p>
+            
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Mot de passe
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="Entrez votre mot de passe"
+                onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+              />
+              {passwordError && (
+                <p className="mt-2 text-sm text-red-600 dark:text-red-400">
+                  {passwordError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={handlePasswordModalClose}
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium text-sm"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handlePasswordSubmit}
+                className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-medium text-sm"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -6,7 +6,11 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import MainLayout from "./components/MainLayout";
 import Login from "./components/CRUD/login";
 import Register from "./components/CRUD/inscription";
+import VerifyCode from "./components/CRUD/VerifyCode";
+import ForgotPassword from "./components/CRUD/ForgotPassword";
+import ResetPassword from "./components/CRUD/ResetPassword";
 import Home from "./pages/Home";
+import Dashboard from "./pages/Dashboard";
 import About from "./pages/About";
 import DataList from "./components/CRUD/DataListe";
 import ProduitsAmazon from "./components/ProduitAmazon";
@@ -53,6 +57,21 @@ const App = () => {
                 <Register />
               </PublicRoute>
             } />
+            <Route path="/verify-code" element={
+              <PublicRoute>
+                <VerifyCode />
+              </PublicRoute>
+            } />
+            <Route path="/forgot-password" element={
+              <PublicRoute>
+                <ForgotPassword />
+              </PublicRoute>
+            } />
+            <Route path="/reset-password" element={
+              <PublicRoute>
+                <ResetPassword />
+              </PublicRoute>
+            } />
 
             {/* Routes protégées — toutes à l'intérieur du MainLayout */}
             <Route
@@ -63,7 +82,7 @@ const App = () => {
                 </ProtectedRoute>
               }
             >
-              <Route index element={<DataList />} />
+              <Route index element={<Dashboard />} />
               <Route path="produit" element={<DataList />} />
               <Route path="affiche_cluster" element={<ProduitsAmazon />} />
               <Route path="Walmart" element={<ProduitsWalmart />} />

@@ -25,6 +25,11 @@ const Login = () => {
       });
       const data = await response.json();
       if (!response.ok) {
+        // Si l'email n'est pas vérifié, rediriger vers la vérification
+        if (data.requires_verification) {
+          navigate("/verify-code", { state: { email: data.email || form.email } });
+          return;
+        }
         setError(data.error || "Identifiants invalides.");
       } else {
         login(data);
@@ -62,6 +67,11 @@ const Login = () => {
             <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1">Mot de passe</label>
             <input name="mot_de_passe" type="password" value={form.mot_de_passe} onChange={handleChange} required
               className="w-full rounded-xl border border-gray-200 dark:border-gray-600 px-4 py-2.5 text-sm bg-white dark:bg-gray-700 dark:text-white focus:border-cyan-400 focus:ring-cyan-200 dark:focus:ring-cyan-800 focus:ring-2 outline-none transition-all" />
+            <div className="mt-1 text-right">
+              <button type="button" onClick={() => navigate('/forgot-password')} className="text-xs text-cyan-500 hover:text-cyan-600 font-medium hover:underline transition-colors">
+                Mot de passe oublié ?
+              </button>
+            </div>
           </div>
           <button type="submit" disabled={loading}
             className="w-full rounded-xl bg-cyan-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-cyan-600 disabled:opacity-50 transition-colors shadow-lg shadow-cyan-100 dark:shadow-none">
