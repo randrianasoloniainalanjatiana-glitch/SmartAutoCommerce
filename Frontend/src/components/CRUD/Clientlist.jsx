@@ -1,22 +1,23 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-
-
+import { useAuth } from '../../contexts/AuthContext';
 
 const ClientList = () => {
+  const { user } = useAuth();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(5);
-  
-  // CORRECTION : On initialise la clé à null pour respecter le tri de la base de données au chargement
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'desc' });
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/api/client/');
+        const url = user?.id 
+          ? `http://localhost:8000/api/client/?user_id=${user.id}`
+          : 'http://localhost:8000/api/client/';
+        const response = await axios.get(url);
         if (response.data) setItems(response.data);
       } catch (error) {
         console.error("Erreur Django/CORS:", error);
@@ -25,64 +26,110 @@ const ClientList = () => {
       }
     };
     fetchData();
-  }, []);
-  
+  }, [user?.id]);
+
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+    setSortConfig({ key, direction });
+  };
+
+  const filteredAndSortedItems = useMemo(() => {
+    let filteredItems = [...items];
+    if (searchQuery) {
+      filteredItems = filteredItems.filter(item =>
+        item.nom?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.adresse?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.telephone?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+    if (sortConfig.key !== null) {
+      filteredItems.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (a[sortConfig.key] > b[sortConfig.key]) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+    return filteredItems;
+  }, [items, sortConfig, searchQuery]);
+
+  const indexOfLastItem = currentPage * rowsPerPage;
+  const indexOfFirstItem = indexOfLastItem - rowsPerPage;
+  const currentItems = filteredAndSortedItems.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredAndSortedItems.length / rowsPerPage);
+
+  const getSortIcon = (name) => {
+    if (sortConfig.key !== name) return "↕️";
+    return sortConfig.direction === 'asc' ? "🔼" : "🔽";
+  };
+
+  if (loading) return <div className="flex justify-center p-20"><div className="animate-spin rounded-full h-10 w-10 border-b-2 border-cyan-500"></div></div>;
+
   return (
-    
-    
-    <div className="w-full bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-50/50 border-b border-gray-200">
-              <th className="px-6 py-4 font-semibold text-gray-600 uppercase tracking-wider text-[11px]">
-                Nom du Contact
-              </th>
-              <th className="px-6 py-4 font-semibold text-gray-600 uppercase tracking-wider text-[11px]">
-                Localisation
-              </th>
-              <th className="px-6 py-4 font-semibold text-gray-600 uppercase tracking-wider text-[11px] text-right">
-                Coordonnées
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {items.length > 0 ? (
-              items.map((item) => (
-                <tr 
-                  key={item.id} 
-                  className="hover:bg-slate-50 transition-all duration-200 group"
-                >
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-8 font-sans text-gray-900 dark:text-gray-100 transition-colors">
+      <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
+          <h1 className="text-2xl font-black text-gray-800 dark:text-white tracking-tight">LISTE CLIENTS</h1>
+          <div className="flex items-center gap-3">
+            <input type="text" placeholder="Rechercher par nom, adresse ou téléphone..."
+              value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+              className="w-80 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent" />
+            <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm">
+              <span className="text-gray-500 dark:text-gray-400 font-medium">Lignes :</span>
+              <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                className="bg-transparent font-bold outline-none cursor-pointer dark:text-white">
+                <option value={5}>5</option><option value={10}>10</option><option value={20}>20</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 uppercase text-[11px] font-bold tracking-wider border-b dark:border-gray-700">
+                <th onClick={() => requestSort('nom')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none">Nom du Contact {getSortIcon('nom')}</th>
+                <th onClick={() => requestSort('adresse')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none">Localisation {getSortIcon('adresse')}</th>
+                <th onClick={() => requestSort('telephone')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none text-right">Coordonnées {getSortIcon('telephone')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              {currentItems.length > 0 ? currentItems.map((item) => (
+                <tr key={item.id} className="hover:bg-cyan-50/50 dark:hover:bg-gray-700/50 transition-colors group">
                   <td className="px-6 py-4">
-                    <span className="font-medium text-gray-900 group-hover:text-blue-600">
-                      {item.nom}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-gray-500">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate max-w-[200px]">{item.adresse}</span>
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-cyan-50 dark:bg-cyan-900/30 border border-cyan-200 dark:border-cyan-800 mr-4 flex items-center justify-center shadow-sm">
+                        <span className="text-sm font-bold text-cyan-600 dark:text-cyan-400">{item.nom?.charAt(0)?.toUpperCase() || '?'}</span>
+                      </div>
+                      <div className="text-sm font-bold text-gray-900 dark:text-white">{item.nom}</div>
                     </div>
                   </td>
+                  <td className="px-6 py-4 text-gray-500 dark:text-gray-400 text-sm truncate max-w-[250px]">{item.adresse || "—"}</td>
                   <td className="px-6 py-4 text-right">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
-                      {item.telephone}
-                    </span>
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">{item.telephone}</span>
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="3" className="px-6 py-10 text-center text-gray-400 italic">
-                  Aucune donnée disponible
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )) : (
+                <tr><td colSpan="3" className="px-6 py-10 text-center text-gray-400 italic">{searchQuery ? 'Aucun résultat trouvé' : 'Aucune donnée disponible'}</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/30 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-gray-400 font-medium italic">Affichage {filteredAndSortedItems.length > 0 ? indexOfFirstItem + 1 : 0} à {Math.min(indexOfLastItem, filteredAndSortedItems.length)} sur {filteredAndSortedItems.length} entrées</p>
+          <div className="flex items-center gap-1">
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}
+              className="px-4 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white transition-all">PRÉCÉDENT</button>
+            <div className="flex gap-1 px-4 text-xs font-black text-gray-500 dark:text-gray-400">{currentPage} / {totalPages || 1}</div>
+            <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(prev => prev + 1)}
+              className="px-4 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white transition-all">SUIVANT</button>
+          </div>
+        </div>
       </div>
     </div>
   );
 };
-
 
 export default ClientList;

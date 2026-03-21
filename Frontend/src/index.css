@@ -1,4 +1,6 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
 /* .justc{
   justify-content: center;
   flex-direction: column;
