@@ -1,8 +1,14 @@
 import { Outlet } from "react-router-dom";
 import Sidebar from "./side";
 import Head from "./headbar";
+import { useSubscription } from "./SubscriptionGuard";
+import FirstLoginSubscription from "../pages/FirstLoginSubscription";
+import WelcomeSubscription from "../pages/WelcomeSubscription";
 
 const MainLayout = () => {
+  const { isRestricted, subStatus } = useSubscription();
+  const hasNoSubscription = subStatus?.status === 'no_subscription';
+
   return (
     <div className="flex h-screen bg-[#F0F2F5] dark:bg-gray-900 transition-colors duration-200">
       {/* Sidebar fixe à gauche */}
@@ -17,7 +23,11 @@ const MainLayout = () => {
 
         {/* Contenu des pages enfants (via Outlet) */}
         <div className="flex-1 p-3 overflow-y-auto">
-          <Outlet />
+          {isRestricted ? (
+            hasNoSubscription ? <FirstLoginSubscription /> : <WelcomeSubscription />
+          ) : (
+            <Outlet />
+          )}
         </div>
       </main>
     </div>

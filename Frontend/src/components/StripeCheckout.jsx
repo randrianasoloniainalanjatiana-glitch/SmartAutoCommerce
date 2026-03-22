@@ -29,7 +29,7 @@ const CheckoutForm = ({ clientSecret, userId, plan, onSuccess }) => {
             confirmParams: {
                 // Return URL isn't strictly used since redirect is 'if_required' for cards
                 // but Stripe requires it in typescript for some payment methods
-                return_url: window.location.origin,
+                return_url: window.location.origin + window.location.pathname,
             },
             redirect: 'if_required',
         });

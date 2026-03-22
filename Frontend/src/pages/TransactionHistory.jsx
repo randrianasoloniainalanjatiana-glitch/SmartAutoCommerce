@@ -31,14 +31,14 @@ const TransactionHistory = () => {
         fetchHistory();
     }, [userId]);
 
-    if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white flex items-center justify-center">Chargement de l'historique...</div>;
+    if (loading) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex items-center justify-center">Chargement de l'historique...</div>;
 
-    if (!user) return <div className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-white flex items-center justify-center">Veuillez vous connecter.</div>;
+    if (!user) return <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white flex items-center justify-center">Veuillez vous connecter.</div>;
 
     const history = data?.history || [];
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-950 p-6 lg:p-12 text-gray-800 dark:text-gray-200 font-sans">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 lg:p-12 text-gray-800 dark:text-gray-200 font-sans">
             <div className="max-w-5xl mx-auto">
                 <div className="mb-10">
                     <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-2">Historique des Transactions</h1>

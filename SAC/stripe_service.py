@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Clé secrète Stripe (idéalement dans .env)
-STRIPE_SECRET_KEY = "sk_test_51TDgHvL60IFtafgnA4LMCfM8cp2A6z69KqBTdAbsTsusgc9Mo10Jd9pkx0xDqkoVgDm25IV4yZDAVePy1hCTOoEQ00ikcFZVuW"
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
 stripe.api_key = STRIPE_SECRET_KEY
 
 def create_payment_intent(amount, currency="eur"):

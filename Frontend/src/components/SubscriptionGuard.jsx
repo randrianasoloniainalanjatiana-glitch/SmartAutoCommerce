@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../contexts/AuthContext';
 import { X } from 'lucide-react';
 import WelcomeSubscription from '../pages/WelcomeSubscription';
+import FirstLoginSubscription from '../pages/FirstLoginSubscription';
 
 const API_BASE_URL = "http://localhost:8000/api";
 
@@ -47,6 +48,10 @@ const SubscriptionGuard = ({ children }) => {
         return () => window.removeEventListener('show-subscription-modal', handleShowModal);
     }, []);
 
+    const isExpired = subStatus?.statut === 'expire';
+    const hasNoSubscription = subStatus?.status === 'no_subscription';
+    const isRestricted = hasNoSubscription || isExpired;
+
     if (loading || isChecking) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
@@ -59,9 +64,7 @@ const SubscriptionGuard = ({ children }) => {
         return children;
     }
 
-    const isExpired = subStatus?.statut === 'expire';
-    const hasNoSubscription = subStatus?.status === 'no_subscription';
-    const isRestricted = hasNoSubscription || isExpired;
+    // Moved isRestricted variables above useEffect
 
     return (
         <SubscriptionContext.Provider value={{ isRestricted, subStatus }}>
@@ -70,14 +73,16 @@ const SubscriptionGuard = ({ children }) => {
             {showModal && isRestricted && (
                 <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
                     <div className="relative w-full max-w-4xl my-8">
-                        <button
-                            onClick={() => setShowModal(false)}
-                            className="absolute -top-12 right-0 text-gray-500 hover:text-gray-800 dark:text-white dark:hover:text-gray-300 z-50 p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg"
-                        >
-                            <X size={24} />
-                        </button>
+                        {!hasNoSubscription && (
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="absolute -top-12 right-0 text-gray-500 hover:text-gray-800 dark:text-white dark:hover:text-gray-300 z-50 p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg"
+                            >
+                                <X size={24} />
+                            </button>
+                        )}
                         <div className="bg-white dark:bg-gray-950 rounded-2xl overflow-hidden shadow-2xl border border-gray-200 dark:border-gray-800 max-h-[90vh] overflow-y-auto">
-                            <WelcomeSubscription />
+                            {hasNoSubscription ? <FirstLoginSubscription /> : <WelcomeSubscription />}
                         </div>
                     </div>
                 </div>
