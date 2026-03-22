@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutGrid, Calendar, FileText, MessageSquare,
-  Users, Puzzle, Map, ChevronDown, ChevronUp
+  Users, Puzzle, Map, ChevronDown, ChevronUp, CreditCard, History
 } from 'lucide-react';
 
 
@@ -25,6 +25,8 @@ const Sidebar = () => {
     { name: 'Conversations', icon: <Users size={20} />, path: '/conv' },
     { name: 'Commande', icon: <Puzzle size={20} />, path: '/commande' },
     { name: 'Rapports', icon: <Map size={20} />, path: '/rapports' },
+    { name: 'Abonnement', icon: <CreditCard size={20} />, path: '/abonnement' },
+    { name: 'Historique des paiements', icon: <History size={20} />, path: '/historique-paiements' },
   ];
 
   const toggleSubMenu = (name) => {

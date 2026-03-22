@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from "react";
+import { useSubscription } from "../components/SubscriptionGuard";
+import { Lock } from "lucide-react";
 
 function ProduitsWalmart() {
+  const { isRestricted } = useSubscription();
   const [produits, setProduits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchProduits = async () => {
+      if (isRestricted) {
+        setLoading(false);
+        return;
+      }
       try {
         const response = await fetch("https://legendary-francene-unegregiously.ngrok-free.dev/walmart", {
           headers: { "ngrok-skip-browser-warning": "69420" }
@@ -21,7 +28,30 @@ function ProduitsWalmart() {
       }
     };
     fetchProduits();
-  }, []);
+  }, [isRestricted]);
+
+  if (isRestricted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-6 mt-8 max-w-2xl mx-auto">
+        <div className="bg-gray-100 dark:bg-gray-800 p-8 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full flex flex-col items-center">
+          <div className="bg-blue-100 dark:bg-blue-900/30 p-5 rounded-full mb-6 relative">
+            <Lock className="w-12 h-12 text-blue-600 dark:text-blue-400 relative z-10" />
+            <div className="absolute inset-0 bg-blue-400 opacity-20 blur-xl rounded-full"></div>
+          </div>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-4">Suggestions IA <span className="text-blue-500">Premium</span></h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md font-medium">
+            L'accès exclusif aux suggestions de produits rentables Walmart générées par notre Intelligence Artificielle est réservé aux abonnés actifs.
+          </p>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('show-subscription-modal'))}
+            className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-black rounded-xl shadow-[0_10px_30px_rgba(37,99,235,0.3)] hover:shadow-[0_15px_40px_rgba(37,99,235,0.4)] transition-all transform hover:-translate-y-1 w-full max-w-sm"
+          >
+            ACTIVÉ MON ABONNEMENT
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

@@ -20,6 +20,10 @@ import CommandeList from "./components/CRUD/Commande_liste";
 import Parametres from "./pages/Parametres";
 import Profile from "./pages/Profile";
 import Securite from "./pages/Securite";
+import SubscriptionGuard from "./components/SubscriptionGuard";
+import Subscription from "./pages/Subscription";
+import WelcomeSubscription from "./pages/WelcomeSubscription";
+import TransactionHistory from "./pages/TransactionHistory";
 
 // Composant qui redirige les utilisateurs connectés loin de /login
 const PublicRoute = ({ children }) => {
@@ -73,12 +77,23 @@ const App = () => {
               </PublicRoute>
             } />
 
+            {/* Route de bienvenue en plein écran sans Sidebar ni Header pour les nouveaux ou expirés */}
+            <Route path="/bienvenue" element={
+              <ProtectedRoute>
+                <SubscriptionGuard>
+                  <WelcomeSubscription />
+                </SubscriptionGuard>
+              </ProtectedRoute>
+            } />
+
             {/* Routes protégées — toutes à l'intérieur du MainLayout */}
             <Route
               path="/"
               element={
                 <ProtectedRoute>
-                  <MainLayout />
+                  <SubscriptionGuard>
+                    <MainLayout />
+                  </SubscriptionGuard>
                 </ProtectedRoute>
               }
             >
@@ -94,6 +109,8 @@ const App = () => {
               <Route path="publication" element={<div className="p-6"><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Page Publication</h2><p className="text-gray-500 mt-2">Cette page est en cours de développement.</p></div>} />
               <Route path="conv" element={<div className="p-6"><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Page Conversations</h2><p className="text-gray-500 mt-2">Cette page est en cours de développement.</p></div>} />
               <Route path="rapports" element={<div className="p-6"><h2 className="text-2xl font-bold text-gray-800 dark:text-white">Page Rapports</h2><p className="text-gray-500 mt-2">Cette page est en cours de développement.</p></div>} />
+              <Route path="abonnement" element={<Subscription />} />
+              <Route path="historique-paiements" element={<TransactionHistory />} />
             </Route>
 
             {/* Redirection par défaut */}

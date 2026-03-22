@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .supabase_client import supabase
 from .email_utils import generate_code, send_confirmation_email
+from .stripe_service import create_payment_intent, retrieve_payment_intent
 
 
 def _hash_password(password: str) -> str:
@@ -570,5 +571,223 @@ class ChangePasswordView(APIView):
             else:
                 return Response({"error": "Échec de la modification du mot de passe."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
                 
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ─────────────────────────────────────────────────────────────
+#  ABONNEMENT ET PAIEMENT PAYPAL
+# ─────────────────────────────────────────────────────────────
+from .paypal_service import create_order, capture_order
+
+class SubscriptionStartFreeTrialView(APIView):
+    def post(self, request):
+        try:
+            user_id = request.data.get('user_id')
+            if not user_id:
+                return Response({"error": "user_id est requis."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Check if subscription already exists
+            resp = supabase.table('abonnements_utilisateurs').select("*").eq('id_utilisateur', user_id).execute()
+            if resp.data:
+                return Response({"error": "Un abonnement ou essai existe déjà pour cet utilisateur."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            now = datetime.now(timezone.utc)
+            end_trial = now + timedelta(days=10)
+            
+            data = {
+                "id_utilisateur": user_id,
+                "type_plan": "essai_gratuit",
+                "statut": "actif",
+                "essai_utilise": True,
+                "debut_essai": now.isoformat(),
+                "fin_essai": end_trial.isoformat(),
+                "debut_periode_actuelle": now.isoformat(),
+                "fin_periode_actuelle": end_trial.isoformat()
+            }
+            
+            res = supabase.table('abonnements_utilisateurs').insert(data).execute()
+            return Response(res.data[0], status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class PayPalCreateOrderView(APIView):
+    def post(self, request):
+        try:
+            type_plan = request.data.get('type_plan')
+            if type_plan == 'mensuel':
+                amount = "19.99"
+            elif type_plan == 'annuel':
+                amount = "199.90"
+            else:
+                return Response({"error": "type_plan invalide."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            order = create_order(amount=amount)
+            return Response({"order_id": order["id"]}, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class PayPalCaptureOrderView(APIView):
+    def post(self, request):
+        try:
+            order_id = request.data.get('order_id')
+            user_id = request.data.get('user_id')
+            type_plan = request.data.get('type_plan')
+            
+            if not all([order_id, user_id, type_plan]):
+                return Response({"error": "order_id, user_id et type_plan sont requis."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Capture with PayPal
+            capture_data = capture_order(order_id)
+            if capture_data.get('status') != 'COMPLETED':
+                return Response({"error": "Le paiement n'a pas pu être validé.", "details": capture_data}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Get amount
+            amount_value = capture_data['purchase_units'][0]['payments']['captures'][0]['amount']['value']
+            currency_code = capture_data['purchase_units'][0]['payments']['captures'][0]['amount']['currency_code']
+            
+            # Log transaction
+            transaction_data = {
+                "id_utilisateur": user_id,
+                "id_commande_paypal": order_id,
+                "montant": float(amount_value),
+                "devise": currency_code,
+                "type_plan": type_plan,
+                "statut": "COMPLETED"
+            }
+            supabase.table('historique_transactions').insert(transaction_data).execute()
+            
+            # Update subscription
+            now = datetime.now(timezone.utc)
+            days = 30 if type_plan == 'mensuel' else 365
+            end_period = now + timedelta(days=days)
+            
+            sub_resp = supabase.table('abonnements_utilisateurs').select("*").eq('id_utilisateur', user_id).execute()
+            if sub_resp.data:
+                sub_id = sub_resp.data[0]['id']
+                update_data = {
+                    "type_plan": type_plan,
+                    "statut": "actif",
+                    "debut_periode_actuelle": now.isoformat(),
+                    "fin_periode_actuelle": end_period.isoformat(),
+                    "mis_a_jour_le": now.isoformat()
+                }
+                supabase.table('abonnements_utilisateurs').update(update_data).eq('id', sub_id).execute()
+            else:
+                insert_data = {
+                    "id_utilisateur": user_id,
+                    "type_plan": type_plan,
+                    "statut": "actif",
+                    "essai_utilise": False,
+                    "debut_periode_actuelle": now.isoformat(),
+                    "fin_periode_actuelle": end_period.isoformat()
+                }
+                supabase.table('abonnements_utilisateurs').insert(insert_data).execute()
+                
+            return Response({"message": "Paiement validé avec succès."}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class StripeCreateIntentView(APIView):
+    def post(self, request):
+        try:
+            type_plan = request.data.get('type_plan')
+            if type_plan == 'mensuel':
+                amount = 19.99
+            elif type_plan == 'annuel':
+                amount = 199.90
+            else:
+                return Response({"error": "type_plan invalide."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            intent_data = create_payment_intent(amount=amount)
+            return Response(intent_data, status=status.HTTP_201_CREATED)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class StripeCapturePaymentView(APIView):
+    def post(self, request):
+        try:
+            payment_intent_id = request.data.get('payment_intent_id')
+            user_id = request.data.get('user_id')
+            type_plan = request.data.get('type_plan')
+            
+            if not all([payment_intent_id, user_id, type_plan]):
+                return Response({"error": "payment_intent_id, user_id et type_plan sont requis."}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # Verify payment intent status
+            intent = retrieve_payment_intent(payment_intent_id)
+            if intent.status != 'succeeded':
+                return Response({"error": "Le paiement Stripe n'a pas pu être validé.", "details": intent.status}, status=status.HTTP_400_BAD_REQUEST)
+                
+            amount_value = intent.amount / 100.0
+            currency_code = intent.currency.upper()
+            
+            # Log transaction
+            transaction_data = {
+                "id_utilisateur": user_id,
+                "id_commande_paypal": payment_intent_id,  # Using this column to store the payment intent ID
+                "montant": amount_value,
+                "devise": currency_code,
+                "type_plan": type_plan,
+                "statut": "COMPLETED"
+            }
+            supabase.table('historique_transactions').insert(transaction_data).execute()
+            
+            # Update subscription
+            now = datetime.now(timezone.utc)
+            days = 30 if type_plan == 'mensuel' else 365
+            end_period = now + timedelta(days=days)
+            
+            sub_resp = supabase.table('abonnements_utilisateurs').select("*").eq('id_utilisateur', user_id).execute()
+            if sub_resp.data:
+                sub_id = sub_resp.data[0]['id']
+                update_data = {
+                    "type_plan": type_plan,
+                    "statut": "actif",
+                    "debut_periode_actuelle": now.isoformat(),
+                    "fin_periode_actuelle": end_period.isoformat(),
+                    "mis_a_jour_le": now.isoformat()
+                }
+                supabase.table('abonnements_utilisateurs').update(update_data).eq('id', sub_id).execute()
+            else:
+                insert_data = {
+                    "id_utilisateur": user_id,
+                    "type_plan": type_plan,
+                    "statut": "actif",
+                    "essai_utilise": False,
+                    "debut_periode_actuelle": now.isoformat(),
+                    "fin_periode_actuelle": end_period.isoformat()
+                }
+                supabase.table('abonnements_utilisateurs').insert(insert_data).execute()
+                
+            return Response({"message": "Paiement validé avec succès."}, status=status.HTTP_200_OK)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class SubscriptionStatusView(APIView):
+    def get(self, request, user_id):
+        try:
+            resp = supabase.table('abonnements_utilisateurs').select("*").eq('id_utilisateur', str(user_id)).execute()
+            if not resp.data:
+                return Response({"status": "no_subscription"}, status=status.HTTP_200_OK)
+            
+            sub = resp.data[0]
+            # Verify if expired
+            now = datetime.now(timezone.utc)
+            fin_periode = datetime.fromisoformat(sub['fin_periode_actuelle'].replace('Z', '+00:00'))
+            if now > fin_periode and sub['statut'] == 'actif':
+                sub['statut'] = 'expire'
+                supabase.table('abonnements_utilisateurs').update({"statut": "expire"}).eq('id', sub['id']).execute()
+                
+            # History
+            hist = supabase.table('historique_transactions').select("*").eq('id_utilisateur', str(user_id)).order('cree_le', desc=True).execute()
+            sub['history'] = hist.data
+                
+            return Response(sub, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

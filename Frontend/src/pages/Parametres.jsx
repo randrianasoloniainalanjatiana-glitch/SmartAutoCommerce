@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
+import { useSubscription } from '../components/SubscriptionGuard';
 
 const Parametres = () => {
   const { user } = useAuth();
+  const { isRestricted } = useSubscription();
   const [parametres, setParametres] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -130,7 +132,7 @@ const Parametres = () => {
             </div>
             <div className="flex gap-2">
               {!editing ? (
-                <button onClick={handleEditClick} className="px-5 py-2.5 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-colors font-semibold text-sm shadow-md shadow-cyan-100 dark:shadow-none">Modifier</button>
+                <button onClick={() => isRestricted ? window.dispatchEvent(new CustomEvent('show-subscription-modal')) : handleEditClick()} className="px-5 py-2.5 bg-cyan-500 text-white rounded-xl hover:bg-cyan-600 transition-colors font-semibold text-sm shadow-md shadow-cyan-100 dark:shadow-none">Modifier</button>
               ) : (
                 <>
                   <button onClick={handleCancel} className="px-4 py-2.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-semibold text-sm">Annuler</button>
@@ -217,7 +219,7 @@ const Parametres = () => {
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Veuillez entrer votre mot de passe pour modifier les paramètres
             </p>
-            
+
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Mot de passe

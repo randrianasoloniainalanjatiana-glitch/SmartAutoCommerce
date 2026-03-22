@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSettings } from '../../contexts/SettingsContext';
+import { useSubscription } from '../SubscriptionGuard';
 
 const AddProduct = ({ onProductAdded }) => {
   const { user } = useAuth();
   const { currentSymbol } = useSettings();
+  const { isRestricted } = useSubscription();
   const [isOpen, setIsOpen] = useState(false);
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -103,37 +105,37 @@ const AddProduct = ({ onProductAdded }) => {
   };
 
   const resetForm = () => {
-    setIsOpen(false); setResult(null); setImage(null); setPreview(null); setPrix(''); setQuantite(''); 
+    setIsOpen(false); setResult(null); setImage(null); setPreview(null); setPrix(''); setQuantite('');
     setEditableNom(''); setEditableDescription(''); setIsEditMode(false); setProduitNonConforme(false); stopCamera();
   };
 
   const handleAnnulation = async () => {
     if (!user?.id) { alert("Erreur : utilisateur non identifié"); return; }
     setIsSaving(true);
-    const payload = { 
-      annulation: true, 
+    const payload = {
+      annulation: true,
       id_utilisateur: user.id
     };
     try {
-      const response = await fetch(WEBHOOK_VALIDATION, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(payload) 
+      const response = await fetch(WEBHOOK_VALIDATION, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
       if (response.ok) {
         resetForm();
       }
-    } catch (e) { 
-      alert("Erreur lors de l'annulation"); 
-    } finally { 
-      setIsSaving(false); 
+    } catch (e) {
+      alert("Erreur lors de l'annulation");
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => isRestricted ? window.dispatchEvent(new CustomEvent('show-subscription-modal')) : setIsOpen(true)}
         className="group relative flex items-center gap-2 px-4 py-1.5 rounded-md border border-cyan-400/50 text-cyan-500 hover:text-cyan-600 transition-all duration-300 hover:border-cyan-500 hover:shadow-[0_0_20px_rgba(6,182,212,0.4)] active:scale-95 overflow-hidden"
       >
         <span className="relative flex h-2 w-2">
@@ -207,9 +209,9 @@ const AddProduct = ({ onProductAdded }) => {
                             <div className="space-y-3">
                               <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Nom du produit</label>
-                                <input 
-                                  type="text" 
-                                  value={editableNom} 
+                                <input
+                                  type="text"
+                                  value={editableNom}
                                   onChange={(e) => setEditableNom(e.target.value)}
                                   className="w-full p-2 border dark:border-gray-600 rounded-lg outline-none focus:ring-2 focus:ring-cyan-500 bg-white dark:bg-gray-700 dark:text-white text-sm"
                                   placeholder="Nom du produit"
@@ -217,8 +219,8 @@ const AddProduct = ({ onProductAdded }) => {
                               </div>
                               <div>
                                 <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Description</label>
-                                <textarea 
-                                  value={editableDescription} 
+                                <textarea
+                                  value={editableDescription}
                                   onChange={(e) => setEditableDescription(e.target.value)}
                                   className="w-full p-2 border dark:border-gray-600 rounded-lg outline-none focus:ring-2 focus:ring-cyan-500 bg-white dark:bg-gray-700 dark:text-white text-sm resize-none"
                                   placeholder="Description du produit"
@@ -246,7 +248,7 @@ const AddProduct = ({ onProductAdded }) => {
                       </div>
                     </div>
                   )}
-                  
+
                   {!produitNonConforme ? (
                     <>
                       <div className="grid grid-cols-2 gap-4">
@@ -273,7 +275,7 @@ const AddProduct = ({ onProductAdded }) => {
                       </p>
                     </div>
                   )}
-                  
+
                   <button
                     onClick={handleAnnulation} disabled={isSaving}
                     className="w-full py-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-black rounded-xl border-2 border-red-200 dark:border-red-800 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all disabled:opacity-50"

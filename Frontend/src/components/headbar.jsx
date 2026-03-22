@@ -2,14 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search, Bell, ChevronDown, MessageSquare,
-  UserPlus, User, Settings, LogOut, Shield, Sun, Moon
+  UserPlus, User, Settings, LogOut, Shield, Sun, Moon, CreditCard
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { useSubscription } from './SubscriptionGuard';
 
 const Head = () => {
   const { user, logout } = useAuth();
   const { darkMode, toggleDarkMode } = useTheme();
+  const { subStatus } = useSubscription();
   const navigate = useNavigate();
 
   const [showNotifs, setShowNotifs] = useState(false);
@@ -67,16 +69,21 @@ const Head = () => {
     <>
       <header className="h-20 bg-white dark:bg-gray-800 rounded-xl border-b border-gray-100 dark:border-gray-700 px-8 flex items-center justify-between relative">
 
-        {/* Barre de Recherche */}
-        <div className="relative w-96">
-          <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-gray-400">
-            <Search size={18} />
-          </span>
-          <input
-            type="text"
-            className="block w-full py-2.5 pl-10 pr-3 bg-gray-50 dark:bg-gray-700 border-none rounded-xl text-sm placeholder-gray-400 dark:text-white focus:ring-2 focus:ring-cyan-100 dark:focus:ring-cyan-800 focus:bg-white dark:focus:bg-gray-600 transition-all outline-none"
-            placeholder="Rechercher..."
-          />
+        {/* Statut Abonnement à la place de la recherche */}
+        <div className="flex items-center">
+          {subStatus ? (
+            <div className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700/50 py-1.5 px-3 rounded-xl border border-gray-100 dark:border-gray-700">
+              <div className="hidden sm:block">
+                <p className="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider leading-none mb-1">Plan Actuel</p>
+                <p className="text-sm font-bold text-gray-800 dark:text-white capitalize leading-none">{subStatus.type_plan?.replace('_', ' ') || 'Aucun'}</p>
+              </div>
+              <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${subStatus.statut === 'actif' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400'}`}>
+                {subStatus.statut || 'Inactif'}
+              </span>
+            </div>
+          ) : (
+            <div className="h-10 w-32 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -85,8 +92,8 @@ const Head = () => {
           <button
             onClick={toggleDarkMode}
             className={`relative p-2 rounded-lg transition-all ${darkMode
-                ? 'bg-yellow-50 text-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-400'
-                : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+              ? 'bg-yellow-50 text-yellow-500 dark:bg-yellow-900/30 dark:text-yellow-400'
+              : 'text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
               }`}
             title={darkMode ? 'Mode clair' : 'Mode sombre'}
           >
@@ -160,6 +167,12 @@ const Head = () => {
                   className="w-full px-4 py-2 text-left text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                 >
                   <User size={16} className="text-gray-400" /> Mon Profil
+                </button>
+                <button
+                  onClick={() => handleNavigate('/abonnement')}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
+                >
+                  <CreditCard size={16} className="text-gray-400" /> Mon Abonnement
                 </button>
                 <button
                   onClick={() => handleNavigate('/parametres')}

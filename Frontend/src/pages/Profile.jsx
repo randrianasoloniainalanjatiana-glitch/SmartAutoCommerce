@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { User, Mail, Phone, MapPin, Edit3, Save, X } from 'lucide-react';
+import { useSubscription } from '../components/SubscriptionGuard';
 
 const Profile = () => {
     const { user, login } = useAuth();
+    const { isRestricted } = useSubscription();
     const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
@@ -141,7 +143,7 @@ const Profile = () => {
                             </div>
                             {!editing ? (
                                 <button
-                                    onClick={handleEditClick}
+                                    onClick={() => isRestricted ? window.dispatchEvent(new CustomEvent('show-subscription-modal')) : handleEditClick()}
                                     className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-xl text-sm font-semibold hover:bg-cyan-600 transition-colors shadow-md shadow-cyan-100 dark:shadow-none"
                                 >
                                     <Edit3 size={16} /> Modifier

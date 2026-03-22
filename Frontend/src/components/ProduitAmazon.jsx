@@ -1,48 +1,51 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { useSubscription } from "../components/SubscriptionGuard";
+import { Lock } from "lucide-react";
 
 function ProduitsAmazon() {
   const { user } = useAuth();
+  const { isRestricted } = useSubscription();
   const [produits, setProduits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchProduits = async () => {
-      if (!user?.id) {
+      if (!user?.id || isRestricted) {
         setLoading(false);
         return;
       }
-      
+
       try {
         const response = await fetch("https://motivational-mica-unfailing.ngrok-free.dev/affiche_cluster", {
           headers: { "ngrok-skip-browser-warning": "true" },
         });
         if (!response.ok) throw new Error(`Erreur HTTP ${response.status} : Vérifiez que votre serveur backend est bien lancé.`);
         const data = await response.json();
-        
+
         console.log("=== DEBUG PRODUITS ===");
         console.log("ID utilisateur connecté:", user.id);
         console.log("Type de ID utilisateur:", typeof user.id);
         console.log("Données brutes reçues:", data);
         console.log("Nombre total de produits reçus:", data.length);
-        
+
         if (data.length > 0) {
           console.log("Structure du premier produit:", data[0]);
           console.log("ID utilisateur du premier produit:", data[0].id_utilisateur);
           console.log("Type de ID utilisateur du premier produit:", typeof data[0].id_utilisateur);
         }
-        
+
         // Filtrer les produits par id_utilisateur
         const produitsFiltres = data.filter(produit => {
           const match = String(produit.id_utilisateur) === String(user.id);
           console.log(`Produit ${produit.produit || produit.asin}: id_utilisateur=${produit.id_utilisateur} (${typeof produit.id_utilisateur}) vs user.id=${user.id} (${typeof user.id}) -> ${match}`);
           return match;
         });
-        
+
         console.log("Produits filtrés:", produitsFiltres);
         console.log("Nombre de produits filtrés:", produitsFiltres.length);
-        
+
         setProduits(produitsFiltres);
       } catch (err) {
         setError(err.message);
@@ -51,7 +54,30 @@ function ProduitsAmazon() {
       }
     };
     fetchProduits();
-  }, [user?.id]);
+  }, [user?.id, isRestricted]);
+
+  if (isRestricted) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center p-6 mt-8 max-w-2xl mx-auto">
+        <div className="bg-gray-100 dark:bg-gray-800 p-8 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-2xl w-full flex flex-col items-center">
+          <div className="bg-orange-100 dark:bg-orange-900/30 p-5 rounded-full mb-6 relative">
+            <Lock className="w-12 h-12 text-orange-600 dark:text-orange-400 relative z-10" />
+            <div className="absolute inset-0 bg-orange-400 opacity-20 blur-xl rounded-full"></div>
+          </div>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-4">Suggestions IA <span className="text-orange-500">Premium</span></h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md font-medium">
+            L'accès exclusif aux suggestions de produits rentables Amazon générées par notre Intelligence Artificielle est réservé aux abonnés actifs.
+          </p>
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('show-subscription-modal'))}
+            className="px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-black rounded-xl shadow-[0_10px_30px_rgba(249,115,22,0.3)] hover:shadow-[0_15px_40px_rgba(249,115,22,0.4)] transition-all transform hover:-translate-y-1 w-full max-w-sm"
+          >
+            ACTIVÉ MON ABONNEMENT
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

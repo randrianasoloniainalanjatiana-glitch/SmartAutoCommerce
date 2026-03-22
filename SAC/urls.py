@@ -15,6 +15,12 @@ from .views import (
     UpdateProfileView,
     ChangePasswordView,
     VerifyPasswordView,
+    SubscriptionStartFreeTrialView,
+    PayPalCreateOrderView,
+    PayPalCaptureOrderView,
+    SubscriptionStatusView,
+    StripeCreateIntentView,
+    StripeCapturePaymentView,
 )
 
 urlpatterns = [
@@ -44,4 +50,12 @@ urlpatterns = [
     path('client/', SupabaseClient.as_view(), name='client-detail'),
     path('commandes/', SupabaseCommande.as_view(), name='commande-list'),
     path('commandes/<int:commande_id>/', SupabaseCommandeDetail.as_view(), name='commande-detail'),
+
+    # Abonnements et Paiements
+    path('subscription/start-trial/', SubscriptionStartFreeTrialView.as_view(), name='subscription-start-trial'),
+    path('subscription/create-order/', PayPalCreateOrderView.as_view(), name='subscription-create-order'),
+    path('subscription/capture-order/', PayPalCaptureOrderView.as_view(), name='subscription-capture-order'),
+    path('subscription/create-stripe-intent/', StripeCreateIntentView.as_view(), name='subscription-create-stripe-intent'),
+    path('subscription/capture-stripe-payment/', StripeCapturePaymentView.as_view(), name='subscription-capture-stripe-payment'),
+    path('subscription/status/<uuid:user_id>/', SubscriptionStatusView.as_view(), name='subscription-status'),
 ]
