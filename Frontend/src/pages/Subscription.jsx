@@ -79,6 +79,7 @@ const Subscription = () => {
 
     const hasUsedTrial = subscriptionStatus?.essai_utilise || false;
     const isCurrentlyActive = subscriptionStatus?.statut === 'actif';
+    const isPaidActive = isCurrentlyActive && subscriptionStatus?.type_plan !== 'essai_gratuit';
 
     return (
         <div className="w-full flex justify-center py-4">
@@ -147,79 +148,92 @@ const Subscription = () => {
                         </div>
                     )}
 
-                    <div className="grid md:grid-cols-2 gap-8 my-10">
-                        {/* Mensuel */}
-                        <div
-                            onClick={() => setSelectedPlan('mensuel')}
-                            className={`relative cursor-pointer transition-all duration-300 rounded-xl p-6 border-2 
-                ${selectedPlan === 'mensuel' ? 'border-blue-500 bg-blue-50 dark:bg-gray-800/80' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-blue-300 dark:hover:border-gray-700'}`}
-                        >
-                            <h2 className="text-2xl font-bold flex items-center text-gray-900 dark:text-white gap-3">Mensuel</h2>
-                            <p className="text-gray-500 dark:text-gray-400 mt-2">Flexibilité maximale, sans engagement sur le long terme.</p>
-                            <div className="mt-6 mb-4">
-                                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">19.99$</span>
-                                <span className="text-gray-500"> / mois</span>
-                            </div>
-                            <ul className="space-y-3 mb-6">
-                                <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><CheckCircle size={16} className="text-blue-500 dark:text-blue-400" /> Accès complet aux fonctionnalités</li>
-                                <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><CheckCircle size={16} className="text-blue-500 dark:text-blue-400" /> Support standard</li>
-                            </ul>
-                        </div>
-
-                        {/* Annuel */}
-                        <div
-                            onClick={() => setSelectedPlan('annuel')}
-                            className={`relative cursor-pointer transition-all duration-300 rounded-xl p-6 border-2 
-                ${selectedPlan === 'annuel' ? 'border-purple-500 bg-purple-50 dark:bg-gray-800/80 shadow-[0_0_20px_rgba(168,85,247,0.2)]' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-purple-300 dark:hover:border-gray-700'}`}
-                        >
-                            <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl">POPULAIRE</div>
-                            <h2 className="text-2xl font-bold flex items-center text-gray-900 dark:text-white gap-3">Annuel</h2>
-                            <p className="text-gray-500 dark:text-gray-400 mt-2">Le meilleur choix pour votre business à long terme.</p>
-                            <div className="mt-6 mb-4">
-                                <span className="text-4xl font-extrabold text-gray-900 dark:text-white">199.90$</span>
-                                <span className="text-gray-500"> / an</span>
-                                <p className="text-green-600 dark:text-green-400 text-xs mt-1 font-bold">Économisez 15%</p>
-                            </div>
-                            <ul className="space-y-3 mb-6">
-                                <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><CheckCircle size={16} className="text-purple-500 dark:text-purple-400" /> Accès complet aux fonctionnalités</li>
-                                <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><CheckCircle size={16} className="text-purple-500 dark:text-purple-400" /> Support prioritaire</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col items-center gap-6 mt-8">
-                        {/* Sélecteur de méthode de paiement */}
-                        <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
-                            <button
-                                onClick={() => setPaymentMethod('stripe')}
-                                className={`px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${paymentMethod === 'stripe' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                            >
-                                <CreditCard size={18} /> Carte Bancaire
-                            </button>
-                            <button
-                                onClick={() => setPaymentMethod('paypal')}
-                                className={`px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${paymentMethod === 'paypal' ? 'bg-[#0070ba] text-white shadow' : 'text-gray-400 hover:text-white'}`}
-                            >
-                                PayPal
-                            </button>
-                        </div>
-
-                        <div className="w-full max-w-sm mt-4 min-h-[300px] flex justify-center">
-                            {paymentMethod === 'stripe' ? (
-                                <StripeCheckout plan={selectedPlan} userId={userId} />
-                            ) : (
-                                <div className="w-full">
-                                    <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "EUR", intent: "capture" }}>
-                                        <PayPalButtons
-                                            style={{ layout: "vertical", color: "blue", shape: "rect", label: "pay" }}
-                                            createOrder={createOrder}
-                                            onApprove={onApprove}
-                                        />
-                                    </PayPalScriptProvider>
+                    {!isPaidActive ? (
+                        <>
+                            <div className="grid md:grid-cols-2 gap-8 my-10">
+                                {/* Mensuel */}
+                                <div
+                                    onClick={() => setSelectedPlan('mensuel')}
+                                    className={`relative cursor-pointer transition-all duration-300 rounded-xl p-6 border-2 
+                        ${selectedPlan === 'mensuel' ? 'border-blue-500 bg-blue-50 dark:bg-gray-800/80' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-blue-300 dark:hover:border-gray-700'}`}
+                                >
+                                    <h2 className="text-2xl font-bold flex items-center text-gray-900 dark:text-white gap-3">Mensuel</h2>
+                                    <p className="text-gray-500 dark:text-gray-400 mt-2">Flexibilité maximale, sans engagement sur le long terme.</p>
+                                    <div className="mt-6 mb-4">
+                                        <span className="text-4xl font-extrabold text-gray-900 dark:text-white">19.99$</span>
+                                        <span className="text-gray-500"> / mois</span>
+                                    </div>
+                                    <ul className="space-y-3 mb-6">
+                                        <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><CheckCircle size={16} className="text-blue-500 dark:text-blue-400" /> Accès complet aux fonctionnalités</li>
+                                        <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><CheckCircle size={16} className="text-blue-500 dark:text-blue-400" /> Support standard</li>
+                                    </ul>
                                 </div>
-                            )}
+
+                                {/* Annuel */}
+                                <div
+                                    onClick={() => setSelectedPlan('annuel')}
+                                    className={`relative cursor-pointer transition-all duration-300 rounded-xl p-6 border-2 
+                        ${selectedPlan === 'annuel' ? 'border-purple-500 bg-purple-50 dark:bg-gray-800/80 shadow-[0_0_20px_rgba(168,85,247,0.2)]' : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/50 hover:border-purple-300 dark:hover:border-gray-700'}`}
+                                >
+                                    <div className="absolute top-0 right-0 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-bl-lg rounded-tr-xl">POPULAIRE</div>
+                                    <h2 className="text-2xl font-bold flex items-center text-gray-900 dark:text-white gap-3">Annuel</h2>
+                                    <p className="text-gray-500 dark:text-gray-400 mt-2">Le meilleur choix pour votre business à long terme.</p>
+                                    <div className="mt-6 mb-4">
+                                        <span className="text-4xl font-extrabold text-gray-900 dark:text-white">199.90$</span>
+                                        <span className="text-gray-500"> / an</span>
+                                        <p className="text-green-600 dark:text-green-400 text-xs mt-1 font-bold">Économisez 15%</p>
+                                    </div>
+                                    <ul className="space-y-3 mb-6">
+                                        <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><CheckCircle size={16} className="text-purple-500 dark:text-purple-400" /> Accès complet aux fonctionnalités</li>
+                                        <li className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300"><CheckCircle size={16} className="text-purple-500 dark:text-purple-400" /> Support prioritaire</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col items-center gap-6 mt-8">
+                                {/* Sélecteur de méthode de paiement */}
+                                <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg border border-gray-200 dark:border-gray-700">
+                                    <button
+                                        onClick={() => setPaymentMethod('stripe')}
+                                        className={`px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${paymentMethod === 'stripe' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        <CreditCard size={18} /> Carte Bancaire
+                                    </button>
+                                    <button
+                                        onClick={() => setPaymentMethod('paypal')}
+                                        className={`px-6 py-2 rounded-md font-medium transition-colors flex items-center gap-2 ${paymentMethod === 'paypal' ? 'bg-[#0070ba] text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                                    >
+                                        PayPal
+                                    </button>
+                                </div>
+
+                                <div className="w-full max-w-sm mt-4 min-h-[300px] flex justify-center">
+                                    {paymentMethod === 'stripe' ? (
+                                        <StripeCheckout plan={selectedPlan} userId={userId} />
+                                    ) : (
+                                        <div className="w-full">
+                                            <PayPalScriptProvider options={{ "client-id": PAYPAL_CLIENT_ID, currency: "EUR", intent: "capture" }}>
+                                                <PayPalButtons
+                                                    style={{ layout: "vertical", color: "blue", shape: "rect", label: "pay" }}
+                                                    createOrder={createOrder}
+                                                    onApprove={onApprove}
+                                                />
+                                            </PayPalScriptProvider>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="mt-10 p-8 border border-gray-200 dark:border-gray-800 rounded-2xl bg-gray-50 dark:bg-gray-800/50 text-center shadow-inner">
+                            <ShieldCheck className="w-20 h-20 text-green-500 mx-auto mb-6" />
+                            <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">Abonnement Payant Actif</h3>
+                            <p className="text-gray-600 dark:text-gray-400 max-w-lg mx-auto leading-relaxed">
+                                Vous profitez déjà de tous les avantages de votre plan <span className="font-bold text-gray-800 dark:text-gray-200 capitalize">"{subscriptionStatus?.type_plan.replace('_', ' ')}"</span>.
+                                Vous pourrez souscrire à un nouveau plan ou renouveler celui-ci une fois qu'il sera expiré.
+                            </p>
                         </div>
-                    </div>
+                    )}
 
                 </div>
             </div>

@@ -81,7 +81,7 @@ const CommandeList = () => {
   const handleCommandeClick = async (commande) => {
     setSelectedCommande(commande);
     setShowDetails(true);
-    
+
     // Récupérer les détails de la commande
     try {
       const response = await axios.get(`http://localhost:8000/api/commandes/${commande.id}/`);
@@ -104,15 +104,15 @@ const CommandeList = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-8 font-sans text-gray-900 dark:text-gray-100 transition-colors">
-      <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 shadow-xl rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
 
-        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <h1 className="text-2xl font-black text-gray-800 dark:text-white tracking-tight">SUIVI DES COMMANDES</h1>
           <div className="flex items-center gap-3">
             <input type="text" placeholder="Rechercher par client, adresse, ID..."
               value={searchQuery} onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-80 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent" />
-            <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm">
+              className="w-80 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent" />
+            <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
               <span className="text-gray-500 dark:text-gray-400 font-medium">Lignes :</span>
               <select value={rowsPerPage} onChange={(e) => { setRowsPerPage(Number(e.target.value)); setCurrentPage(1); }}
                 className="bg-transparent font-bold outline-none cursor-pointer dark:text-white">
@@ -123,9 +123,9 @@ const CommandeList = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 uppercase text-[11px] font-bold tracking-wider border-b dark:border-gray-700">
+              <tr className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 uppercase text-[11px] font-bold tracking-wider border-b border-gray-200 dark:border-gray-800">
                 <th onClick={() => requestSort('id')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none">ID {getSortIcon('id')}</th>
                 <th onClick={() => requestSort('nom')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none">Client {getSortIcon('nom')}</th>
                 <th onClick={() => requestSort('telephone')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none text-center">Contact {getSortIcon('telephone')}</th>
@@ -134,9 +134,9 @@ const CommandeList = () => {
                 <th className="px-6 py-4 text-center">Statut Paiement</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {currentItems.length > 0 ? currentItems.map((item) => (
-                <tr key={item.id} className="hover:bg-cyan-50/50 dark:hover:bg-gray-700/50 transition-colors group cursor-pointer" onClick={() => handleCommandeClick(item)}>
+                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group cursor-pointer" onClick={() => handleCommandeClick(item)}>
                   <td className="px-6 py-4">
                     <div className="text-sm font-bold text-gray-900 dark:text-white">#{item.id}</div>
                     <div className="text-[10px] text-gray-400 font-medium">{new Date(item.created_at).toLocaleDateString()}</div>
@@ -157,22 +157,20 @@ const CommandeList = () => {
                     <span className="text-sm font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-1 rounded-md">{item.montant_total} {currentSymbol}</span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border capitalize ${
-                      item.statut_livraison === 'livre' 
-                        ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800' 
-                        : item.statut_livraison === 'en_cours' 
-                        ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
-                        : 'bg-gray-50 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800'
-                    }`}>
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border capitalize ${item.statut_livraison === 'livre'
+                        ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
+                        : item.statut_livraison === 'en_cours'
+                          ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                          : 'bg-gray-50 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800'
+                      }`}>
                       {item.statut_livraison?.replace('_', ' ')?.toUpperCase() || 'EN ATTENTE'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-center">
-                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border capitalize ${
-                      item.statut_paiement === 'paye' 
-                        ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800' 
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border capitalize ${item.statut_paiement === 'paye'
+                        ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
                         : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
-                    }`}>
+                      }`}>
                       {item.statut_paiement?.replace('_', ' ')?.toUpperCase() || 'NON PAYE'}
                     </span>
                   </td>
@@ -184,14 +182,14 @@ const CommandeList = () => {
           </table>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/30 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-400 font-medium italic">Affichage {filteredAndSortedItems.length > 0 ? indexOfFirstItem + 1 : 0} à {Math.min(indexOfLastItem, filteredAndSortedItems.length)} sur {filteredAndSortedItems.length} entrées</p>
           <div className="flex items-center gap-1">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}
-              className="px-4 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white transition-all">PRÉCÉDENT</button>
+              className="px-4 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white transition-all">PRÉCÉDENT</button>
             <div className="flex gap-1 px-4 text-xs font-black text-gray-500 dark:text-gray-400">{currentPage} / {totalPages || 1}</div>
             <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(prev => prev + 1)}
-              className="px-4 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white transition-all">SUIVANT</button>
+              className="px-4 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white transition-all">SUIVANT</button>
           </div>
         </div>
       </div>
@@ -206,7 +204,7 @@ const CommandeList = () => {
                   <h2 className="text-2xl font-bold text-gray-900 dark:text-white">FACTURE</h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Commande #{selectedCommande.id}</p>
                 </div>
-                <button 
+                <button
                   onClick={closeDetails}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
@@ -285,23 +283,21 @@ const CommandeList = () => {
                   <div className="space-y-2">
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-gray-500 dark:text-gray-400">Statut Livraison:</span>
-                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border capitalize ${
-                        selectedCommande.statut_livraison === 'livre' 
-                          ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800' 
-                          : selectedCommande.statut_livraison === 'en_cours' 
-                          ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
-                          : 'bg-gray-50 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800'
-                      }`}>
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border capitalize ${selectedCommande.statut_livraison === 'livre'
+                          ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
+                          : selectedCommande.statut_livraison === 'en_cours'
+                            ? 'bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800'
+                            : 'bg-gray-50 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-800'
+                        }`}>
                         {selectedCommande.statut_livraison?.replace('_', ' ')?.toUpperCase() || 'EN ATTENTE'}
                       </span>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className="text-sm text-gray-500 dark:text-gray-400">Statut Paiement:</span>
-                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border capitalize ${
-                        selectedCommande.statut_paiement === 'paye' 
-                          ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800' 
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border capitalize ${selectedCommande.statut_paiement === 'paye'
+                          ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
                           : 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800'
-                      }`}>
+                        }`}>
                         {selectedCommande.statut_paiement?.replace('_', ' ')?.toUpperCase() || 'NON PAYE'}
                       </span>
                     </div>
@@ -323,7 +319,7 @@ const CommandeList = () => {
                     <p className="text-gray-700 dark:text-gray-300">
                       {new Date(selectedCommande.created_at).toLocaleDateString('fr-FR', {
                         day: '2-digit',
-                        month: '2-digit', 
+                        month: '2-digit',
                         year: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'

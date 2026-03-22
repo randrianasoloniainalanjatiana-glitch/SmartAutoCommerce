@@ -108,9 +108,9 @@ const DataList = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-4 sm:p-8 font-sans text-gray-900 dark:text-gray-100 transition-colors">
-      <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 shadow-xl rounded-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="max-w-6xl mx-auto bg-white dark:bg-gray-900 shadow-xl rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800">
 
-        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-black text-gray-800 dark:text-white tracking-tight">INVENTAIRE PRODUITS</h1>
             <AddProduct onProductAdded={handleProductAdded} />
@@ -122,9 +122,9 @@ const DataList = () => {
               placeholder="Rechercher par nom, description ou catégorie..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-80 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
+              className="w-80 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg text-sm bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
             />
-            <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm">
+            <div className="flex items-center gap-3 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 text-sm">
               <span className="text-gray-500 dark:text-gray-400 font-medium">Lignes :</span>
               <select
                 value={rowsPerPage}
@@ -140,9 +140,9 @@ const DataList = () => {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 uppercase text-[11px] font-bold tracking-wider border-b dark:border-gray-700">
+              <tr className="bg-gray-50 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 uppercase text-[11px] font-bold tracking-wider border-b border-gray-200 dark:border-gray-800">
                 <th onClick={() => requestSort('name')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none">Produit {getSortIcon('name')}</th>
                 <th onClick={() => requestSort('category')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none text-center">Catégorie {getSortIcon('category')}</th>
                 <th onClick={() => requestSort('price')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none text-right">Prix {getSortIcon('price')}</th>
@@ -150,12 +150,12 @@ const DataList = () => {
                 <th onClick={() => requestSort('is_published')} className="px-6 py-4 cursor-pointer hover:text-cyan-600 select-none text-center">Statut {getSortIcon('is_published')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
               {currentItems.length > 0 ? currentItems.map((item) => (
-                <tr key={item.id} className="hover:bg-cyan-50/50 dark:hover:bg-gray-700/50 transition-colors group cursor-pointer" onClick={() => handleProductClick(item)}>
+                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group cursor-pointer" onClick={() => handleProductClick(item)}>
                   <td className="px-6 py-4">
                     <div className="flex items-center">
-                      <div className="h-12 w-12 rounded-lg bg-gray-100 dark:bg-gray-700 overflow-hidden border border-gray-200 dark:border-gray-600 mr-4 shadow-sm">
+                      <div className="h-12 w-12 rounded-lg bg-gray-100 dark:bg-gray-800 overflow-hidden border border-gray-200 dark:border-gray-700 mr-4 shadow-sm">
                         {item.image_urls ? (
                           <img src={item.image_urls} alt="" className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-300" />
                         ) : (
@@ -188,16 +188,16 @@ const DataList = () => {
           </table>
         </div>
 
-        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-700/30 border-t dark:border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-xs text-gray-400 font-medium italic">
             Affichage {filteredAndSortedItems.length > 0 ? indexOfFirstItem + 1 : 0} à {Math.min(indexOfLastItem, filteredAndSortedItems.length)} sur {filteredAndSortedItems.length} entrées
           </p>
           <div className="flex items-center gap-1">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(prev => prev - 1)}
-              className="px-4 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white transition-all">PRÉCÉDENT</button>
+              className="px-4 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white transition-all">PRÉCÉDENT</button>
             <div className="flex gap-1 px-4 text-xs font-black text-gray-500 dark:text-gray-400">{currentPage} / {totalPages || 1}</div>
             <button disabled={currentPage >= totalPages} onClick={() => setCurrentPage(prev => prev + 1)}
-              className="px-4 py-1.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-white transition-all">SUIVANT</button>
+              className="px-4 py-1.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-lg text-xs font-bold shadow-sm disabled:opacity-30 hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-white transition-all">SUIVANT</button>
           </div>
         </div>
       </div>
@@ -209,7 +209,7 @@ const DataList = () => {
             <div className="p-6">
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Détails du Produit</h2>
-                <button 
+                <button
                   onClick={closeDetails}
                   className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
                 >
@@ -267,11 +267,10 @@ const DataList = () => {
                 <div>
                   <label className="text-sm text-gray-500 dark:text-gray-400">Statut</label>
                   <div className="mt-1">
-                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${
-                      selectedProduct.is_published 
-                        ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800' 
+                    <span className={`text-[10px] font-black px-2.5 py-1 rounded-full border ${selectedProduct.is_published
+                        ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
                         : 'bg-gray-50 dark:bg-gray-700 text-gray-400 border-gray-200 dark:border-gray-600'
-                    }`}>
+                      }`}>
                       {selectedProduct.is_published ? 'ACTIF' : 'INACTIF'}
                     </span>
                   </div>
@@ -284,7 +283,7 @@ const DataList = () => {
                     <p className="text-gray-700 dark:text-gray-300">
                       {new Date(selectedProduct.created_at).toLocaleDateString('fr-FR', {
                         day: '2-digit',
-                        month: '2-digit', 
+                        month: '2-digit',
                         year: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
@@ -297,7 +296,7 @@ const DataList = () => {
                       {new Date(selectedProduct.updated_at).toLocaleDateString('fr-FR', {
                         day: '2-digit',
                         month: '2-digit',
-                        year: 'numeric', 
+                        year: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
