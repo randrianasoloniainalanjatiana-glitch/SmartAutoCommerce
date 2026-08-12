@@ -1,0 +1,167 @@
+{
+  "name": "Send Message",
+  "nodes": [
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/me/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": " access_token",
+              "value": "={{ $json.body.page_access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $json.body.id_receiver }}\"\n  },\n  \"messaging_type\": \"RESPONSE\",\n  \"message\": {\n    \"text\": {{ JSON.stringify($json.body.message) }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1936,
+        496
+      ],
+      "id": "b13f7c76-35ff-4f95-9b2f-dc317818d9bd",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "boutiques",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "messenger_id",
+              "keyValue": "={{ $('Webhook').item.json.body.entry[0].messaging[0].recipient.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -2336,
+        368
+      ],
+      "id": "920cc313-eed6-46a4-aeb1-48b2de1edff1",
+      "name": "Info_boutique",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "envoie_message_manuel",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2208,
+        496
+      ],
+      "id": "638ce4c2-0113-4a76-8a28-19d5028ac2e2",
+      "name": "Webhook",
+      "webhookId": "066efee2-c8c2-4342-a999-0126bcf3d55e"
+    },
+    {
+      "parameters": {
+        "tableId": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "Message_id",
+              "fieldValue": "={{ $json.message_id }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "messenger"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $('Webhook').item.json.body.message }}"
+            },
+            {
+              "fieldId": "id_sender",
+              "fieldValue": "={{ $('Webhook').item.json.body.id_sender }}"
+            },
+            {
+              "fieldId": "page_id",
+              "fieldValue": "={{ $('Webhook').item.json.body.page_id }}"
+            },
+            {
+              "fieldId": "id_receiver",
+              "fieldValue": "={{ $('Webhook').item.json.body.id_receiver }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -1664,
+        496
+      ],
+      "id": "4d3b0ec2-3e83-4bf5-ba13-fd6c6a4317b2",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Info_boutique": {
+      "main": [
+        []
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "b4054ec0-9c8f-4421-b8e2-3c0af5ded207",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84f22c6ccf4315047b59f6ffab52cda01e67c2ebad27e955d523253f41cfcc29"
+  },
+  "id": "E1IHXpiUt8Eafl3z",
+  "tags": []
+}

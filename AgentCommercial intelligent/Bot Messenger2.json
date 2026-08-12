@@ -1,0 +1,3600 @@
+{
+  "name": "Bot Messenger2",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        13520,
+        7936
+      ],
+      "id": "acb7908a-2163-4f18-bd75-8f405a61b5b0",
+      "name": "Embeddings OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "7I4OIZH1fJ6io9m6",
+          "name": "SAC"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.id_produit }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16896,
+        6176
+      ],
+      "id": "30cf48e2-c9f2-4b80-9808-450bea3f2965",
+      "name": "Get a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "stock_quantity",
+              "fieldValue": "={{ $json.stock_quantity - $('Create a row').item.json.quantite_acheter }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        17104,
+        6176
+      ],
+      "id": "8c60953f-c0d3-4cff-b8b3-c1bdc43c371a",
+      "name": "Update a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "details_commandes",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "id_commande",
+              "fieldValue": "={{ $('Edit Fields1').item.json.id_commande }}"
+            },
+            {
+              "fieldId": "id_produit",
+              "fieldValue": "={{ $('Edit Fields1').item.json.output.produits[0].id_produit }}"
+            },
+            {
+              "fieldId": "quantite_acheter",
+              "fieldValue": "={{ $('Edit Fields1').item.json.output.produits[0].quantite }}"
+            },
+            {
+              "fieldId": "prix_unitaire",
+              "fieldValue": "={{ $('Edit Fields1').item.json.output.produits[0].prix_unitaire }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16736,
+        6176
+      ],
+      "id": "d1524c72-4758-4435-9b27-ffbbd3f1378b",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "batchSize": 5,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        16624,
+        6032
+      ],
+      "id": "f21eadff-b9de-4968-b32e-2b12a532b33f",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.produits",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        16176,
+        5968
+      ],
+      "id": "dec09215-6280-4dc7-b520-d784d5df8848",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a490fe05-f509-45a5-8bcd-fdb3e80698ef",
+              "name": "id_commande",
+              "value": "={{ $json.id }}",
+              "type": "number"
+            },
+            {
+              "id": "6afb52fc-5433-4beb-b738-2f3835896703",
+              "name": "id_client",
+              "value": "={{ $json.id_client }}",
+              "type": "string"
+            },
+            {
+              "id": "fbe1c980-45f5-4950-bde8-22c210d11df3",
+              "name": "output.produits",
+              "value": "={{ $('AI Agent1').item.json.output.produits }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        15920,
+        5968
+      ],
+      "id": "7a1699b3-a1ba-49d5-b399-ef33e4c8c67e",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "tableId": "commandes",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "id_client",
+              "fieldValue": "={{ $('If').item.json.senderId }}"
+            },
+            {
+              "fieldId": "montant_total",
+              "fieldValue": "={{ $('AI Agent1').item.json.output.commande.montant_total }}"
+            },
+            {
+              "fieldId": "statut_livraison",
+              "fieldValue": "={{ $('AI Agent1').item.json.output.commande.statut_livraison }}"
+            },
+            {
+              "fieldId": "statut_paiement",
+              "fieldValue": "={{ $('AI Agent1').item.json.output.commande.statut_paiement }}"
+            },
+            {
+              "fieldId": "id_utilisateur",
+              "fieldValue": "={{ $('Info_boutique').item.json.id_utilisateur }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        15632,
+        6080
+      ],
+      "id": "817e80b7-3c97-41e8-9138-140cf33b30dd",
+      "name": "Create Order",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const orderRow = $json || {};\nconst boutique = $('Info_boutique').item.json || {};\nconst agentOut = $('AI Agent1').item.json.output || {};\nconst client = agentOut.client || {};\nconst produits = agentOut.produits || [];\nconst commande = agentOut.commande || {};\n\n// Id de commande au format numeric dans la table `commandes`\nconst orderId = orderRow.id ?? null;\n\nconst produitsText = (produits || [])\n  .map(p => {\n    const nom = p.nom_produit || p.name || '';\n    const idProduit = p.id_produit || p.id || '';\n    const qty = p.quantite ?? p.quantity ?? '';\n    const prix = p.prix_unitaire ?? p.price ?? '';\n    return `${nom} (id=${idProduit}) x${qty} @${prix}`;\n  })\n  .join('; ');\n\nconst telephoneClient = client.contact ?? client.telephone ?? '';\n\nconst content = `Commande ID: ${orderId}\nBoutique: ${boutique.nom_boutique || ''}\nPays: ${boutique.pays || ''}\nVille: ${boutique.ville || ''}\nClient: ${client.nom || ''}\nAdresse: ${client.adresse || ''}\nTelephone: ${telephoneClient}\nStatut livraison: ${commande.statut_livraison || ''}\nStatut paiement: ${commande.statut_paiement || ''}\nMontant total: ${commande.montant_total || ''}\nProduits: ${produitsText}`;\n\nconst metadata = {\n  id_commande: orderId,\n  // id_client est stocké dans `commandes`\n  id_client: orderRow.id_client ?? ($('If').item.json?.senderId ?? null),\n  id_utilisateur: boutique.id_utilisateur ?? null,\n  boutique,\n  client,\n  commande,\n  produits,\n  order_row: orderRow\n};\n\nreturn [{ json: { content, metadata } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        15888,
+        6240
+      ],
+      "id": "13025381-beda-4520-9d16-b6b6705a2cca",
+      "name": "Code Commande Embedding"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $json || {};\nconst m = input.metadata || {};\n\nconst sanitized = {\n  id_utilisateur: m.id_utilisateur ?? null,\n  id_commande: m.id_commande ?? null,\n  id_client: m.id_client ?? null,\n  // Garder uniquement les infos nécessaires au SAV + récupération par référence\n  client: m.client ?? {},\n  commande: m.commande ?? {},\n  produits: m.produits ?? [],\n  order_row: m.order_row ?? null\n};\n\nreturn [{ json: { content: input.content, metadata: sanitized } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16240,
+        6256
+      ],
+      "id": "ded57064-cb70-46d6-b4a9-73cae6960386",
+      "name": "Code Commande Embedding Sanitized"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        16272,
+        6432
+      ],
+      "id": "0a94f257-f6cc-40a8-b859-f97d10e9f32f",
+      "name": "Embeddings OpenAI4",
+      "credentials": {
+        "openAiApi": {
+          "id": "6bIJHd7ZB5inPxCw",
+          "name": "SAC"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "info_commande",
+                "value": "={{ $json.metadata }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        16752,
+        6464
+      ],
+      "id": "9f254acc-bfb4-402f-a9e4-b1d3691a2638",
+      "name": "Default Data Loader2"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "commande_embeddings",
+          "mode": "list",
+          "cachedResultName": "commande_embeddings"
+        },
+        "embeddingBatchSize": null,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        16432,
+        6368
+      ],
+      "id": "0521f345-d562-4894-b3f8-c79bb45553b4",
+      "name": "Supabase Vector Store2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "client",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "res_id",
+              "fieldValue": "={{ $('If').item.json.senderId }}"
+            },
+            {
+              "fieldId": "nom",
+              "fieldValue": "={{ $('AI Agent1').item.json.output.client.nom }}"
+            },
+            {
+              "fieldId": "adresse",
+              "fieldValue": "={{ $('AI Agent1').item.json.output.client.adresse }}"
+            },
+            {
+              "fieldId": "telephone",
+              "fieldValue": "={{ $('AI Agent1').item.json.output.client.contact }}"
+            },
+            {
+              "fieldId": "id_utilisateur",
+              "fieldValue": "={{ $('Info_boutique').item.json.id_utilisateur }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        15376,
+        6304
+      ],
+      "id": "d7f67c7b-2e7f-4586-b5ee-8dc1989007a5",
+      "name": "Insert New Client",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "05ed85d7-9411-47d2-b4a4-0e7c93c23bee",
+              "leftValue": "={{ $json.res_id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        15264,
+        6096
+      ],
+      "id": "9ea681ca-7956-421c-bf7e-6c325bf14396",
+      "name": "Client Already Exists?"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "client",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "res_id",
+              "condition": "eq",
+              "keyValue": "={{ $('If').item.json.senderId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14944,
+        6096
+      ],
+      "id": "af308e63-f373-4a94-9b69-3ee6a47d7320",
+      "name": "Check Client Exists",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"client\": {\n    \"nom\": \"Jean Rakoto\",\n    \"adresse\": \"Lot II A 45 Ankorondrano\",\n    \"contact\": \"0341234567\"\n  },\n  \"produits\": [\n    {\n      \"id_produit\": \"a1b2c3d4-e5f6-7890-abcd-ef1234567890\",\n      \"nom_produit\": \"Dior Sauvage EDT 100ml\",\n      \"quantite\": 2,\n      \"prix_unitaire\": 95000\n    }\n  ],\n  \"commande\": {\n    \"montant_total\": 190000,\n    \"statut_livraison\": \"en_attente\",\n    \"statut_paiement\": \"non_paye\"\n  }\n}\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        14384,
+        6400
+      ],
+      "id": "12531dfd-6926-40e3-ba4f-3d30caf2b9dc",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        14128,
+        6384
+      ],
+      "id": "12a92ac3-0b93-443b-a5f5-036ca665fb51",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "6bIJHd7ZB5inPxCw",
+          "name": "SAC"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('If').item.json.aiResponse }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "={{ $json.data }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        14432,
+        6096
+      ],
+      "id": "45c047b0-7b58-420b-b848-2c97465ddda5",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "=Utilise cet outil pour rechercher des produits disponibles \ndans la boutique. Utilise-le dès qu'un client demande ce \nque nous vendons, les prix, ou des détails sur un article.",
+        "tableName": {
+          "__rl": true,
+          "value": "product_embeddings",
+          "mode": "list",
+          "cachedResultName": "product_embeddings"
+        },
+        "topK": 2,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        13376,
+        7632
+      ],
+      "id": "788cb83b-14d2-477b-a5ba-0e44e7d95d0a",
+      "name": "recherche_produits",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "=Utilise cet outil pour retrouver une commande et ses produits associés à partir d'une référence de commande (numéro/code) en utilisant `commande_embeddings`. Utilise-le en priorité pendant le SAV dès que le client donne la référence de la commande.",
+        "tableName": {
+          "__rl": true,
+          "value": "commande_embeddings",
+          "mode": "list",
+          "cachedResultName": "commande_embeddings"
+        },
+        "topK": 3,
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        13664,
+        7632
+      ],
+      "id": "c45bff2d-26fe-4e1a-aad6-ea6b6d336587",
+      "name": "recherche_commandes",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * Détection des mots-clés : COMMANDE_VALIDÉE / SAV_DEMANDE / ANNULATION_DEMANDEE\n */\nconst aiOutput   = $input.item.json.output || \"\";\nconst facebookId = $input.item.json.senderId || \"ID_INCONNU\";\n\nconst isCommandeOk = aiOutput.includes(\"COMMANDE_VALIDÉE\");\nconst isSAV        = aiOutput.includes(\"SAV_DEMANDE\");\nconst isAnnulation = aiOutput.includes(\"ANNULATION_DEMANDEE\");\n\nlet cleanResponse = aiOutput\n  .replace(\"COMMANDE_VALIDÉE\", \"\")\n  .replace(\"SAV_DEMANDE\", \"\")\n  .replace(\"ANNULATION_DEMANDEE\", \"\")\n  .trim();\n\nif (cleanResponse.length < 2 && isCommandeOk) {\n  cleanResponse = \"Votre commande a été enregistrée avec succès !\";\n}\n\nreturn {\n  aiResponse:       cleanResponse,\n  isVenteConfirmee: isCommandeOk,\n  isSAV:            isSAV,\n  isAnnulation:     isAnnulation,\n  senderId:         facebookId,\n  timestamp:        new Date().toISOString()\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        13664,
+        6656
+      ],
+      "id": "0ca58fa9-1a38-4525-82da-a5c0262f674e",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4ae8d828-dc30-4818-90a4-3cbce3dcef6b",
+              "name": "output",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "8bd822ca-2405-40ff-a2be-0d83a4c85ea2",
+              "name": "senderId",
+              "value": "={{ $('info_message').item.json.senderId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        13424,
+        6656
+      ],
+      "id": "cff7ef45-8267-495d-9dd5-7b8c00d54490",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "gpt-4o"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        13184,
+        7296
+      ],
+      "id": "6e1fa105-ff9c-41e7-b0bb-adc3b85db3bc",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6bIJHd7ZB5inPxCw",
+          "name": "SAC"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=y-{{ $('info_message').item.json.senderId }}",
+        "contextWindowLength": "=15"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        13344,
+        7376
+      ],
+      "id": "e0576314-b8d1-4402-8532-3f7aa39211a9",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('info_message').item.json.messageText }}",
+        "options": {
+          "systemMessage": "={{ $json.prompt }}"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        13232,
+        7072
+      ],
+      "id": "ae993ea1-f647-40da-b5af-d89100514c67",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        9872,
+        6912
+      ],
+      "id": "c492f1c2-e811-4088-b1e8-e7e38c1b7776",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Vérification Facebook\nconst query = $input.item.json;\n\nif (query['hub.mode'] === 'subscribe' && \n    query['hub.verify_token'] === 'Botmessenger') {\n  \n  // Retourner le challenge pour valider\n  $response.status(200).send(query['hub.challenge']);\n  return [];\n}\n\n// Sinon continuer normalement\nreturn $input.item.json;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        9456,
+        6912
+      ],
+      "id": "20193c41-55c7-45bd-bb90-82f495dc326a",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/me/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": " access_token",
+              "value": "={{ $('Info_boutique').item.json.page_access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $json.senderId }}\"\n  },\n  \"messaging_type\": \"RESPONSE\",\n  \"message\": {\n    \"text\": {{ JSON.stringify($json.aiResponse) }}\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        14320,
+        6640
+      ],
+      "id": "22b39291-ff9a-48d0-96fd-2dd2bc88ba71",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "605c7823-8642-4a0f-bc00-70ac3c601f76",
+              "leftValue": "={{ $json.isVenteConfirmee }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        13904,
+        6656
+      ],
+      "id": "7076dae0-7e09-481f-a23d-26fa649da673",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "multipleMethods": true,
+        "path": "messenger2-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        9424,
+        7056
+      ],
+      "id": "83b26fe6-0a20-4bc5-88ae-6271cbeee9d4",
+      "name": "Webhook",
+      "webhookId": "59e7320a-7ded-48f3-8eaf-597996943826",
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "url": "=https://motivational-mica-unfailing.ngrok-free.dev/embedding/product/{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "ngrok-skip-browser-warning",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        17296,
+        6176
+      ],
+      "id": "ae39d0d4-e441-4e99-aad1-c73e52e11696",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// On récupère uniquement le produit qui vient d'être mis à jour\nconst p = items[0].json;\n\n// On crée le texte riche pour la recherche vectorielle (le contenu que l'IA \"lit\")\nconst searchContent = `Produit: ${p.name}\nCatégorie: ${p.category || 'N/A'}\nDescription: ${p.description}\nPrix: ${p.price}€\nStatut: ${p.stock_quantity > 0 ? 'En stock' : 'Rupture de stock'}\nQuantité disponible: ${p.stock_quantity}\nProduit appartenant à l'utilisateur \"${p.id_utilisateur}\"`;\n\n// On retourne l'objet formaté avec la quantité dans les métadonnées\nreturn [\n  {\n    json: {\n      content: searchContent,\n      metadata: {\n        id: p.id,\n        price: p.price,\n        name: p.name,\n        category: p.category,\n        stock_quantity: p.stock_quantity, // Ajout de la quantité ici,\n        id_utilisateur : p.id_utilisateur\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        17872,
+        6176
+      ],
+      "id": "d1381a1a-24e1-4b12-84f3-c059abd62c7e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "product_embeddings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        17504,
+        6176
+      ],
+      "id": "218f92e0-43d7-4175-8447-aec5b5fe48cd",
+      "name": "Delete a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d037bfcf-b9b5-47c9-bb4c-25daa4854108",
+              "name": "id",
+              "value": "={{ $('Update a row').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "a97d44d8-8226-4882-9766-1d5ffd29079e",
+              "name": "name",
+              "value": "={{ $('Update a row').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "404f280c-bc70-42af-9401-9ddab902416c",
+              "name": "description",
+              "value": "={{ $('Update a row').item.json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "a89c3741-3b8e-4a5a-8d21-6c0fad028fd3",
+              "name": "price",
+              "value": "={{ $('Update a row').item.json.price }}",
+              "type": "string"
+            },
+            {
+              "id": "75b9eb95-3d8c-4916-bce2-01a806beadee",
+              "name": "stock_quantity",
+              "value": "={{ $('Update a row').item.json.stock_quantity }}",
+              "type": "string"
+            },
+            {
+              "id": "95b2f67b-bee1-463e-bdba-dfa391cdea8e",
+              "name": "category",
+              "value": "={{ $('Update a row').item.json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "a3f318a7-3df5-4e0e-b34a-a75bbb75d210",
+              "name": "id_utilisateur",
+              "value": "={{ $('Update a row').item.json.id_utilisateur }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        17664,
+        6176
+      ],
+      "id": "edb012be-d314-4253-8233-72d9b7e4759e",
+      "name": "Edit Fields2"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "product_embeddings",
+          "mode": "list",
+          "cachedResultName": "product_embeddings"
+        },
+        "embeddingBatchSize": {},
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        18048,
+        6176
+      ],
+      "id": "cbdb7b29-d7ea-4663-8a64-eccb5ebe7e32",
+      "name": "Supabase Vector Store1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        17936,
+        6400
+      ],
+      "id": "487affef-cde5-4fba-bcae-3488f25559d1",
+      "name": "Embeddings OpenAI3",
+      "credentials": {
+        "openAiApi": {
+          "id": "6bIJHd7ZB5inPxCw",
+          "name": "SAC"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "info_produit",
+                "value": "={{ $json.metadata }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        18080,
+        6400
+      ],
+      "id": "2bbb61d1-a734-4de8-9df8-3317b1b150ab",
+      "name": "Default Data Loader1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "0c4c58e8-746d-4d88-b001-409dbb101310",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        15616,
+        6304
+      ],
+      "id": "2409c7fd-f41b-4426-864e-c3b36ec25614",
+      "name": "Edit Fields3"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        11792,
+        7376
+      ],
+      "id": "5f2b8a70-4ffa-469b-a682-08e851ba1d51",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        12032,
+        7424
+      ],
+      "id": "a0e740cb-420c-466b-8e8c-39141b2f7531",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupère les données du nœud Set précédent\nconst data = $('Info_boutique').item.json;\n\n// Récupère le contenu brut du Google Doc\nlet content = $input.item.json.data; // adaptez si le champ s'appelle autrement\n\n// Remplace toutes les variables {{ $json.xxx }} par leur valeur\ncontent = content.replace(/\\{\\{\\s*\\$json\\.(\\w+)\\s*\\}\\}/g, (match, key) => {\n  return data[key] !== undefined ? data[key] : match;\n});\n\nreturn [{ json: { content } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        11296,
+        7072
+      ],
+      "id": "15948689-4756-433a-b53c-76149fe11b79",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Récupère les données du nœud Set précédent\nconst data = $('Info_boutique').item.json;\n\n// Récupère le contenu brut du Google Doc\nlet content = $input.item.json.data; // adaptez si le champ s'appelle autrement\n\n// Remplace toutes les variables {{ $json.xxx }} par leur valeur\ncontent = content.replace(/\\{\\{\\s*\\$json\\.(\\w+)\\s*\\}\\}/g, (match, key) => {\n  return data[key] !== undefined ? data[key] : match;\n});\n\nreturn [{ json: { content } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        11280,
+        7248
+      ],
+      "id": "67c1d324-a644-4112-baef-38005bb3b05e",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d40319a9-9919-4d6f-b49e-3ee8c260a97f",
+              "name": "info",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        11584,
+        7072
+      ],
+      "id": "9c7cd0d6-67ef-4870-a7d5-71c3d175c4ff",
+      "name": "Edit Fields7"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4be829f4-f812-4817-a197-e0b49132fdab",
+              "name": "role",
+              "value": "={{ $json.content }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        11536,
+        7248
+      ],
+      "id": "87195686-6c9d-4470-9cb7-64b3593a79d1",
+      "name": "Edit Fields8"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://docs.google.com/document/d/1NznPfbQuYk8hKLfT231qMHYwjIQtfMMh4sQ9GQ7cLpo/edit?usp=sharing"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        10928,
+        5824
+      ],
+      "id": "3c1d226e-8c34-44c2-975e-61af2177ae8f",
+      "name": "infromation",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "n06I1NYMbS80zKOF",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2d85752e-aead-4b59-ae15-b3e158d263a7",
+              "name": "prompt",
+              "value": "={{ $('Edit Fields7').item.json.info }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        13072,
+        7072
+      ],
+      "id": "d3eb389a-0d29-4e80-8648-cbfc419f5822",
+      "name": "prompt"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "94437fad-9ce4-4423-bc49-6a3d19c36dfa",
+              "name": "nom_boutique",
+              "value": "TOKINIAINA",
+              "type": "string"
+            },
+            {
+              "id": "d80bd7e3-c842-419f-a092-df4c75c3e804",
+              "name": "description_boutique",
+              "value": "Boutique spécialisée dans la vente d’accessoires informatiques et gadgets technologiques",
+              "type": "string"
+            },
+            {
+              "id": "d2117aaa-0c74-4c3a-b4bb-193b8581fb9e",
+              "name": "secteur_activite",
+              "value": "Informatique ",
+              "type": "string"
+            },
+            {
+              "id": "6e2cdeca-1806-4222-a205-8ae8b5ec1bba",
+              "name": "type_entreprise",
+              "value": "Boutique en ligne",
+              "type": "string"
+            },
+            {
+              "id": "67223efe-a9c9-4f83-ba2e-b812a46c045e",
+              "name": "pays",
+              "value": "Madagascar",
+              "type": "string"
+            },
+            {
+              "id": "b09a8ac5-b671-45f3-8fb3-0e39d2fdb099",
+              "name": "ville",
+              "value": "Antananarivo",
+              "type": "string"
+            },
+            {
+              "id": "c31b27cf-b8ca-4174-aa0c-d542ea07ef6f",
+              "name": "adresse",
+              "value": "Lot 10 bis Ambohitsitononona",
+              "type": "string"
+            },
+            {
+              "id": "7ff97885-a4f8-4e39-a3b5-fa5c3d4a9c8f",
+              "name": "telephone",
+              "value": "0344678649",
+              "type": "string"
+            },
+            {
+              "id": "668d5641-46b8-466c-b945-db449479d12c",
+              "name": "whatsapp",
+              "value": "0344678649",
+              "type": "string"
+            },
+            {
+              "id": "8ea15b99-a9b7-463d-b722-c835158d3611",
+              "name": "email",
+              "value": "tokiniaina@gmail.com",
+              "type": "string"
+            },
+            {
+              "id": "60f2b56e-ccaf-4f27-b3f8-486f7c9cf7b1",
+              "name": "site_web",
+              "value": "Aucun",
+              "type": "string"
+            },
+            {
+              "id": "170e3285-18fa-41cf-8049-36ae03da821a",
+              "name": "debutJours",
+              "value": "Lundi",
+              "type": "string"
+            },
+            {
+              "id": "02cab6a8-6e68-404c-ac45-a11e3b167a97",
+              "name": "finJours",
+              "value": "Dimanche",
+              "type": "string"
+            },
+            {
+              "id": "ed280d65-ff9d-418a-963c-e87341f7c256",
+              "name": "heure",
+              "value": "8h à 17h , dimanche 8h - 12h",
+              "type": "string"
+            },
+            {
+              "id": "4b7646c1-fd21-4d98-ac3f-58b52442503a",
+              "name": "livraison",
+              "value": "oui",
+              "type": "string"
+            },
+            {
+              "id": "4b5ad8b9-1d21-4761-94a1-5d645afa83c7",
+              "name": "zones_livraison",
+              "value": "Tout Madagascar",
+              "type": "string"
+            },
+            {
+              "id": "6ae5b2b8-3b63-4e54-9de0-b57fc20fba4e",
+              "name": "frais_livraison",
+              "value": "3000 Ar Tana et 5000 Ar Autre",
+              "type": "string"
+            },
+            {
+              "id": "beafa856-bf85-4967-b1be-3900c6497e1d",
+              "name": "devise",
+              "value": "Ariary (Ar)",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        10688,
+        7392
+      ],
+      "id": "93422d81-f55d-40bd-a8aa-4dbb61353a7f",
+      "name": "Info_boutique2"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "boutiques",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "messenger_id",
+              "keyValue": "={{ $json.page_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        10448,
+        7072
+      ],
+      "id": "26d9ad79-d34d-4f44-af93-d211df9cc738",
+      "name": "Info_boutique",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "sav-cond-001",
+              "leftValue": "={{ $json.isSAV }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "c223a5a6-52ad-4cca-83e2-3604909ba0ac",
+      "name": "If SAV",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        13984,
+        7344
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "annul-cond-001",
+              "leftValue": "={{ $json.isAnnulation }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0c9dc9ff-58b9-4d65-99da-93e8577eaa67",
+      "name": "If Annulation",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        14336,
+        7440
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "commandes",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_client",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript2').item.json.senderId }}"
+            }
+          ]
+        }
+      },
+      "id": "25c54624-b342-4ac7-b868-aba20ef56348",
+      "name": "Get Commande SAV",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14160,
+        7056
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "commandes",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut_livraison",
+              "fieldValue": "sav_en_cours"
+            }
+          ]
+        }
+      },
+      "id": "12c84944-50fd-4d0b-9172-280e5453bbf1",
+      "name": "Update Statut SAV",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14576,
+        7040
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  aiResponse: $('Code in JavaScript2').item.json.aiResponse,\n  senderId:   $('Code in JavaScript2').item.json.senderId\n};"
+      },
+      "id": "1592d778-08de-44c3-b1a6-28cbad0dd796",
+      "name": "Code SAV Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        14848,
+        7040
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/me/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": " access_token",
+              "value": "={{ $('Info_boutique').item.json.page_access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $json.senderId }}\"\n  },\n  \"messaging_type\": \"RESPONSE\",\n  \"message\": {\n    \"text\": {{ JSON.stringify($json.aiResponse) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "5a4cf062-8931-435e-9e74-ab2f34b31d8f",
+      "name": "Send SAV Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        15104,
+        7040
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "commandes",
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_client",
+              "condition": "eq",
+              "keyValue": "={{ $('Code in JavaScript2').item.json.senderId }}"
+            }
+          ]
+        }
+      },
+      "id": "679cad71-a70e-4caf-b9d5-9172e9819571",
+      "name": "Get Commande Annulation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14640,
+        7424
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "commandes",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "statut_livraison",
+              "fieldValue": "annulee"
+            },
+            {
+              "fieldId": "statut_paiement",
+              "fieldValue": "annule"
+            }
+          ]
+        }
+      },
+      "id": "827b020b-2b20-4b86-8d4e-e7578dc22a8d",
+      "name": "Update Statut Annulation",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14912,
+        7424
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  aiResponse: $('Code in JavaScript2').item.json.aiResponse,\n  senderId:   $('Code in JavaScript2').item.json.senderId\n};"
+      },
+      "id": "2a16f3f5-436d-49b1-b89d-596f5c235ca9",
+      "name": "Code Annulation Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        15152,
+        7424
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v21.0/me/messages",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": " access_token",
+              "value": "={{ $('Info_boutique').item.json.page_access_token }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"recipient\": {\n    \"id\": \"{{ $json.senderId }}\"\n  },\n  \"messaging_type\": \"RESPONSE\",\n  \"message\": {\n    \"text\": {{ JSON.stringify($json.aiResponse) }}\n  }\n}",
+        "options": {}
+      },
+      "id": "454be313-671e-4094-a2b0-01b2524404f7",
+      "name": "Send Annulation Message",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        16560,
+        6800
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "details_commandes",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_commande",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "id": "daa5b149-6fbb-461c-ad8f-eff4a5d75514",
+      "name": "Get Details Commande Annulée",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16064,
+        6544
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "39a2afc3-48f6-4d66-9d54-bf674e0cd3cf",
+      "name": "Split Produits Annulés",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        16304,
+        6544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "keyValue": "={{ $json.id_produit }}"
+            }
+          ]
+        }
+      },
+      "id": "d79caae0-1688-4866-8e0c-58bd505c1cd6",
+      "name": "Get Stock Produit Annulé",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16544,
+        6544
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "tableId": "products",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        },
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "stock_quantity",
+              "fieldValue": "={{ $json.stock_quantity + $('Split Produits Annulés').item.json.quantite_acheter }}"
+            }
+          ]
+        }
+      },
+      "id": "f756541d-9f7c-47ed-80fb-4d140baacab3",
+      "name": "Restore Stock Produit",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16784,
+        6544
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  aiResponse: $('Code Annulation Response').item.json.aiResponse,\n  senderId:   $('Code Annulation Response').item.json.senderId\n};"
+      },
+      "id": "5d1b612f-5752-4c85-922a-4633d5db6bd5",
+      "name": "Code Annulation After Stock",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        17568,
+        6896
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://motivational-mica-unfailing.ngrok-free.dev/embedding/product/{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "ngrok-skip-browser-warning",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "69a8e882-22d7-422f-bffc-803637ae9335",
+      "name": "HTTP Request Restore Embed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        17024,
+        6544
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "tableId": "product_embeddings",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $json.id }}"
+            }
+          ]
+        }
+      },
+      "id": "cd360090-a99f-4051-8875-0bd1b8b297ac",
+      "name": "Delete Embed Restore",
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        17264,
+        6544
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ef-r-001",
+              "name": "id",
+              "value": "={{ $('Restore Stock Produit').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "ef-r-002",
+              "name": "name",
+              "value": "={{ $('Restore Stock Produit').item.json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "ef-r-003",
+              "name": "description",
+              "value": "={{ $('Restore Stock Produit').item.json.description }}",
+              "type": "string"
+            },
+            {
+              "id": "ef-r-004",
+              "name": "price",
+              "value": "={{ $('Restore Stock Produit').item.json.price }}",
+              "type": "string"
+            },
+            {
+              "id": "ef-r-005",
+              "name": "stock_quantity",
+              "value": "={{ $('Restore Stock Produit').item.json.stock_quantity }}",
+              "type": "string"
+            },
+            {
+              "id": "ef-r-006",
+              "name": "category",
+              "value": "={{ $('Restore Stock Produit').item.json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "bcf5ac8e-36a8-4cad-b909-6e45f0086c41",
+              "name": "id_utilisateur",
+              "value": "={{ $('Restore Stock Produit').item.json.id_utilisateur }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b81f2df6-3bc8-45fa-88f8-42d574e5eeb9",
+      "name": "Edit Fields Restore",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        17504,
+        6544
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// On récupère uniquement le produit qui vient d'être mis à jour\nconst p = items[0].json;\n\n// On crée le texte riche pour la recherche vectorielle (le contenu que l'IA \"lit\")\nconst searchContent = `Produit: ${p.name}\nCatégorie: ${p.category || 'N/A'}\nDescription: ${p.description}\nPrix: ${p.price}€\nStatut: ${p.stock_quantity > 0 ? 'En stock' : 'Rupture de stock'}\nQuantité disponible: ${p.stock_quantity}\nProduit appartenant à l'utilisateur \"${p.id_utilisateur}\"`;\n\n// On retourne l'objet formaté avec la quantité dans les métadonnées\nreturn [\n  {\n    json: {\n      content: searchContent,\n      metadata: {\n        id: p.id,\n        price: p.price,\n        name: p.name,\n        category: p.category,\n        stock_quantity: p.stock_quantity, // Ajout de la quantité ici,\n        id_utilisateur : p.id_utilisateur\n      }\n    }\n  }\n];"
+      },
+      "id": "7ae01a3c-651e-4bbc-bb3d-672b5535c783",
+      "name": "Code JS Restore Embed",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        17744,
+        6544
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "product_embeddings",
+          "mode": "list",
+          "cachedResultName": "product_embeddings"
+        },
+        "embeddingBatchSize": {},
+        "options": {
+          "queryName": "match_documents"
+        }
+      },
+      "id": "d3f89fe7-24ce-49aa-b596-9bf21a244f09",
+      "name": "Vector Store Restore",
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        17984,
+        6544
+      ],
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "00aed782-57f9-4aa7-bdc0-d0a4d794c349",
+      "name": "Embeddings Restore",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        17872,
+        6720
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "6bIJHd7ZB5inPxCw",
+          "name": "SAC"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonMode": "expressionData",
+        "jsonData": "={{ $json.content }}",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "info_produit",
+                "value": "={{ $json.metadata }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "a3957377-f330-47d5-8fd9-d3db209ab836",
+      "name": "Data Loader Restore",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        18016,
+        6720
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "livre-cond-001",
+              "leftValue": "={{ $json.statut_livraison }}",
+              "rightValue": "livre",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6d19ddb6-3a40-4ed9-a3d3-5433b50b7a80",
+      "name": "If Commande Livrée",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        14368,
+        7056
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const langue = $('Code in JavaScript2').item.json.aiResponse || \"\";\n\n// Détection langue basique\nconst isMalgache = langue.match(/[a-z]*ana[a-z]*/i) !== null && !langue.match(/votre|notre|vous|nous/i);\n\nconst msgFR = \"Votre commande est encore en cours de livraison. Le service après-vente est disponible uniquement après réception de votre commande. Nous vous contacterons dès qu'elle sera livrée.\";\nconst msgMG = \"Mbola eo am-pandefasana ny baikonao. Azo ampiasaina ny SAV rehefa voaray ny entana ihany. Ho tazana anao izahay raha vita ny fandefasana.\";\n\nreturn {\n  aiResponse: isMalgache ? msgMG : msgFR,\n  senderId: $('Code in JavaScript2').item.json.senderId\n};"
+      },
+      "id": "46054520-a7d4-4b20-9820-e194205014e8",
+      "name": "Code SAV Refusé",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        14704,
+        7216
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "abonnements_utilisateurs",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_utilisateur",
+              "keyValue": "={{ $('Info_boutique').item.json.id_utilisateur }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        12080,
+        7072
+      ],
+      "id": "51a9d19d-83e5-4f95-a896-05700a9c19a0",
+      "name": "Get a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "boutiques",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "messenger_id",
+              "keyValue": "=956145784240679"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        10480,
+        6912
+      ],
+      "id": "0e8abbb1-d681-4545-9c6c-9326212d105f",
+      "name": "Info_boutique1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f9a8db7a-861a-4c28-a1e3-234440934837",
+              "leftValue": "={{ $json.statut }}",
+              "rightValue": "=expire",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        12384,
+        7088
+      ],
+      "id": "063c8db6-ede5-409f-bb76-5fd090f936fc",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://motivational-mica-unfailing.ngrok-free.dev/prompt/test_instruct"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        10896,
+        7376
+      ],
+      "id": "2e5af736-8f4a-45fe-947a-b44462d19091",
+      "name": "Instruction",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "n06I1NYMbS80zKOF",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "58f1cc14-f0b4-407d-a370-019d9fc9d0a3",
+              "name": "senderId",
+              "value": "={{ $json.body.entry[0].messaging[0].sender.id }}",
+              "type": "string"
+            },
+            {
+              "id": "3956df08-498d-4878-bf32-8d887a69510c",
+              "name": "pageId",
+              "value": "={{ $json.body.entry[0].messaging[0].recipient.id }}",
+              "type": "string"
+            },
+            {
+              "id": "655770c4-83ca-40b6-bd7c-ff6e37878551",
+              "name": "messageId",
+              "value": "={{ $json.body.entry[0].messaging[0].message.mid }}",
+              "type": "string"
+            },
+            {
+              "id": "eee946ea-8a80-46f4-b9f0-fa3552865230",
+              "name": "messageText",
+              "value": "={{ $json.body.entry[0].messaging[0].message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "5ae07afe-9367-4109-812e-6571b36fc792",
+              "name": "timestamp",
+              "value": "={{ $json.body.entry[0].messaging[0].timestamp }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        9824,
+        7072
+      ],
+      "id": "03029b14-b700-45cd-bdb3-91b4d99c6ca4",
+      "name": "info_message"
+    },
+    {
+      "parameters": {
+        "tableId": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "Message_id",
+              "fieldValue": "={{ $json.message_id }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "messenger"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $('Code in JavaScript2').item.json.aiResponse }}"
+            },
+            {
+              "fieldId": "page_id",
+              "fieldValue": "={{ $('info_message').item.json.pageId }}"
+            },
+            {
+              "fieldId": "id_sender",
+              "fieldValue": "={{ $('info_message').item.json.pageId }}"
+            },
+            {
+              "fieldId": "id_receiver",
+              "fieldValue": "={{ $json.recipient_id }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14528,
+        6640
+      ],
+      "id": "8c961696-3cea-4cb2-bb99-ac1e9f6e6c7d",
+      "name": "Create a row2",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://motivational-mica-unfailing.ngrok-free.dev/prompt/info",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        10816,
+        7072
+      ],
+      "id": "c58d1a20-8d6e-4ff8-b1bd-1683dbacf60b",
+      "name": "info"
+    },
+    {
+      "parameters": {
+        "url": "https://motivational-mica-unfailing.ngrok-free.dev/prompt/test_instruct",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        11024,
+        7248
+      ],
+      "id": "45e363c9-d171-4fbd-8a6d-c5ed3194c89c",
+      "name": "instruction"
+    },
+    {
+      "parameters": {
+        "url": "https://motivational-mica-unfailing.ngrok-free.dev/prompt/recap",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        13952,
+        6096
+      ],
+      "id": "7546ef9c-5ae4-484e-be81-3903c16830e7",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "tableId": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "Message_id",
+              "fieldValue": "={{ $json.messageId }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "messenger"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $json.messageText }}"
+            },
+            {
+              "fieldId": "page_id",
+              "fieldValue": "={{ $json.pageId }}"
+            },
+            {
+              "fieldId": "id_sender",
+              "fieldValue": "={{ $json.senderId }}"
+            },
+            {
+              "fieldId": "id_receiver",
+              "fieldValue": "={{ $json.pageId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        10064,
+        7072
+      ],
+      "id": "b159cc70-0fcf-462a-8ceb-0426fd7069b5",
+      "name": "Create a row4",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "tableId": "conversations",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "Message_id",
+              "fieldValue": "={{ $('info_message').item.json.messageId }}"
+            },
+            {
+              "fieldId": "platform",
+              "fieldValue": "messenger"
+            },
+            {
+              "fieldId": "message",
+              "fieldValue": "={{ $('Code in JavaScript2').item.json.aiResponse }}"
+            },
+            {
+              "fieldId": "page_id",
+              "fieldValue": "={{ $('info_message').item.json.pageId }}"
+            },
+            {
+              "fieldId": "id_sender",
+              "fieldValue": "={{ $('info_message').item.json.pageId }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        16864,
+        6784
+      ],
+      "id": "374ee129-c863-498a-abd5-ebd0588ee3cd",
+      "name": "Create a row3",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        9632,
+        7072
+      ],
+      "id": "f51ee757-51bf-4007-a0c0-8c342b3b457c",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "conversations",
+        "returnAll": true
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        10112,
+        7760
+      ],
+      "id": "b624dd56-3f77-4f70-a3aa-c1eb04d31b66",
+      "name": "Get many rows",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "Contacts",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_contact",
+              "keyValue": "=25214101751562516"
+            },
+            {
+              "keyName": "id_utilisateur",
+              "keyValue": "={{ $json.id_utilisateur }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        12608,
+        7072
+      ],
+      "id": "a8b5dc04-259b-4bd2-afa1-3213a0ba8a95",
+      "name": "Get a row2",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5ca954c0-c393-4897-9d4d-a2cb91e267b0",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        12800,
+        7072
+      ],
+      "id": "687d13e6-201d-400b-8cad-47411a0e66f8",
+      "name": "If2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "df96e3c8-b987-4cad-a364-83f064eb24fb",
+              "leftValue": "={{ $json.reponse_auto }}",
+              "rightValue": "false",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        12816,
+        7200
+      ],
+      "id": "3a12eaa7-f389-44a2-9b6b-cd3e4bcf472f",
+      "name": "If3"
+    },
+    {
+      "parameters": {
+        "tableId": "Contacts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "id_contact",
+              "fieldValue": "={{ $('Create a row2').item.json.id_receiver }}"
+            },
+            {
+              "fieldId": "id_utilisateur",
+              "fieldValue": "={{ $('Info_boutique').item.json.id_utilisateur }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        15136,
+        6624
+      ],
+      "id": "6db92ba8-0276-4196-9b09-cf59cbe2cbb2",
+      "name": "Create a row1",
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "tableId": "Contacts",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id_contact",
+              "keyValue": "=25214101751562516"
+            },
+            {
+              "keyName": "id_utilisateur",
+              "keyValue": "={{ $('Info_boutique').item.json.id_utilisateur }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        14704,
+        6640
+      ],
+      "id": "33bfc3e1-5cc5-4550-94c6-4367fee0332d",
+      "name": "Get a row3",
+      "alwaysOutputData": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "A1T83kgSTYYmHtLO",
+          "name": "SmartAutoCommerce"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "5ca954c0-c393-4897-9d4d-a2cb91e267b0",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notExists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        14896,
+        6640
+      ],
+      "id": "3af73d05-0dc8-4652-9ec4-668a932d143c",
+      "name": "If4"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        13296,
+        8496
+      ],
+      "id": "e0f95693-51eb-4c6c-b1aa-220ff5b74ad9",
+      "name": "Schedule Trigger",
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "url": "https://get-all.onrender.com",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        13568,
+        8528
+      ],
+      "id": "781e9923-9ba8-4e0e-9862-bdfc106c3493",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        12960,
+        7104
+      ],
+      "id": "28dae2fd-37ee-4705-8559-577ede9fe609",
+      "name": "Aggregate1"
+    }
+  ],
+  "pinData": {
+    "Create a row1": [
+      {
+        "json": {
+          "id": "592bdd7e-a496-430f-bc26-86441353f4cf",
+          "reponse_auto": true,
+          "created_at": "2026-03-30T09:29:25.768648+00:00",
+          "id_contact": "25214101751562516",
+          "id_utilisateur": "edad3d6f-abb8-40b7-ba38-558c45223de2"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ],
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.projets-omega.net",
+            "x-real-ip": "173.252.95.33",
+            "x-forwarded-for": "173.252.95.33",
+            "x-forwarded-proto": "https",
+            "connection": "upgrade",
+            "content-length": "312",
+            "accept": "*/*",
+            "accept-encoding": "deflate, gzip",
+            "user-agent": "facebookexternalua",
+            "content-type": "application/json",
+            "x-hub-signature": "sha1=39155d3decbb96a964fcb448742cc091779d0308",
+            "x-hub-signature-256": "sha256=dae4df52ff4c4690c5159d155e76dd333ea64851d1751d8c9a532bdcaaceff62",
+            "facebook-api-version": "v24.0"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "object": "page",
+            "entry": [
+              {
+                "time": 1775025765751,
+                "id": "622110347649615",
+                "messaging": [
+                  {
+                    "sender": {
+                      "id": "25214101751562516"
+                    },
+                    "recipient": {
+                      "id": "622110347649615"
+                    },
+                    "timestamp": 1775025764863,
+                    "message": {
+                      "mid": "m_xJ4wyofxJ7OF9fxZyDvjHowmp-C22tTe00Nea0iPp7rCLJwK20gP290pHzSx5tZ2XEVSPInDpvQtZ8xWFUaV8w",
+                      "text": "salut"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "webhookUrl": "https://n8n.projets-omega.net/webhook/messenger2-webhook",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0,
+          "input": 1
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "recherche_produits",
+            "type": "ai_embedding",
+            "index": 0
+          },
+          {
+            "node": "recherche_commandes",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row": {
+      "main": [
+        [
+          {
+            "node": "Update a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row": {
+      "main": [
+        [
+          {
+            "node": "Get a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update a row": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Order": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Code Commande Embedding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert New Client": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Client Already Exists?": {
+      "main": [
+        [
+          {
+            "node": "Create Order",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Insert New Client",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Client Exists": {
+      "main": [
+        [
+          {
+            "node": "Client Already Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Check Client Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "recherche_produits": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "recherche_commandes": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          },
+          {
+            "node": "AI Agent1",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If SAV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Delete a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields2": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete a row": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI3": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader1": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Commande Embedding": {
+      "main": [
+        [
+          {
+            "node": "Code Commande Embedding Sanitized",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Commande Embedding Sanitized": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI4": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader2": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields3": {
+      "main": [
+        [
+          {
+            "node": "Create Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        []
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        []
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields7": {
+      "main": [
+        [
+          {
+            "node": "Get a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields8": {
+      "main": [
+        []
+      ]
+    },
+    "prompt": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Info_boutique": {
+      "main": [
+        [
+          {
+            "node": "info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If SAV": {
+      "main": [
+        [
+          {
+            "node": "Get Commande SAV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Annulation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Commande SAV": {
+      "main": [
+        [
+          {
+            "node": "If Commande Livrée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Statut SAV": {
+      "main": [
+        [
+          {
+            "node": "Code SAV Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code SAV Response": {
+      "main": [
+        [
+          {
+            "node": "Send SAV Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Annulation": {
+      "main": [
+        [
+          {
+            "node": "Get Commande Annulation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Commande Annulation": {
+      "main": [
+        [
+          {
+            "node": "Update Statut Annulation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Statut Annulation": {
+      "main": [
+        [
+          {
+            "node": "Code Annulation Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code Annulation Response": {
+      "main": [
+        [
+          {
+            "node": "Get Details Commande Annulée",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Details Commande Annulée": {
+      "main": [
+        [
+          {
+            "node": "Split Produits Annulés",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Produits Annulés": {
+      "main": [
+        [
+          {
+            "node": "Get Stock Produit Annulé",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Annulation Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Stock Produit Annulé": {
+      "main": [
+        [
+          {
+            "node": "Restore Stock Produit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Stock Produit": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request Restore Embed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request Restore Embed": {
+      "main": [
+        [
+          {
+            "node": "Delete Embed Restore",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Embed Restore": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields Restore",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields Restore": {
+      "main": [
+        [
+          {
+            "node": "Code JS Restore Embed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code JS Restore Embed": {
+      "main": [
+        [
+          {
+            "node": "Vector Store Restore",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vector Store Restore": {
+      "main": [
+        [
+          {
+            "node": "Split Produits Annulés",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings Restore": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Vector Store Restore",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Data Loader Restore": {
+      "ai_document": [
+        [
+          {
+            "node": "Vector Store Restore",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Commande Livrée": {
+      "main": [
+        [
+          {
+            "node": "Update Statut SAV",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code SAV Refusé",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code SAV Refusé": {
+      "main": [
+        [
+          {
+            "node": "Send SAV Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row1": {
+      "main": [
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "Get a row2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Create a row2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Annulation Message": {
+      "main": [
+        [
+          {
+            "node": "Create a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "info_message": {
+      "main": [
+        [
+          {
+            "node": "Create a row4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "info": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "instruction": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row4": {
+      "main": [
+        [
+          {
+            "node": "Info_boutique",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook1": {
+      "main": [
+        [
+          {
+            "node": "info_message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row2": {
+      "main": [
+        [
+          {
+            "node": "If2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If2": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If3": {
+      "main": [
+        [
+          {
+            "node": "Aggregate1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create a row2": {
+      "main": [
+        [
+          {
+            "node": "Get a row3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get a row3": {
+      "main": [
+        [
+          {
+            "node": "If4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If4": {
+      "main": [
+        [
+          {
+            "node": "Create a row1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate1": {
+      "main": [
+        [
+          {
+            "node": "prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f84a7949-d134-4c86-95ff-ad6344015762",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "84f22c6ccf4315047b59f6ffab52cda01e67c2ebad27e955d523253f41cfcc29"
+  },
+  "id": "AKwe0lDuYpO6u2rT",
+  "tags": []
+}
